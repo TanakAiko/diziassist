@@ -27,9 +27,17 @@ export default async function HomePage() {
             actions.
           </p>
         </div>
-        <Link href="/meetings/new" className={buttonVariants()}>
-          Nouveau compte rendu
-        </Link>
+        <div className="flex shrink-0 gap-2">
+          <Link
+            href="/dashboard"
+            className={buttonVariants({ variant: "outline" })}
+          >
+            Tableau de bord
+          </Link>
+          <Link href="/meetings/new" className={buttonVariants()}>
+            Nouveau compte rendu
+          </Link>
+        </div>
       </header>
 
       {meetings.length === 0 ? (
