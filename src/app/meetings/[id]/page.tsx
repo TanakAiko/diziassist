@@ -3,9 +3,20 @@ import { notFound } from "next/navigation";
 import { prisma } from "@/lib/db";
 import { formatLongDate } from "@/lib/dates";
 import { extract } from "@/lib/extraction";
-import { KIND_LABELS, KIND_LABELS_PLURAL, type Kind } from "@/lib/constants";
+import {
+  DEFAULT_STATUS,
+  KIND_LABELS,
+  KIND_LABELS_PLURAL,
+  PRIORITIES,
+  STATUSES,
+  type Kind,
+  type Priority,
+  type Status,
+} from "@/lib/constants";
 import { Badge } from "@/components/ui/badge";
 import { ItemPreview, type PreviewItem } from "@/components/item-preview";
+import { ReviewForm, type EditableItem } from "@/components/review-form";
+import { toDateInputValue } from "@/lib/dates";
 
 // Next 15 : params est asynchrone.
 export default async function MeetingPage({
@@ -71,31 +82,67 @@ export default async function MeetingPage({
         <h2 className="text-lg font-medium">
           {isReviewed ? "Éléments enregistrés" : "Éléments proposés"}
         </h2>
-        <p className="mt-1 text-sm text-muted-foreground">
-          {counts}
-        </p>
-        {!isReviewed ? (
-          <p className="mt-3 rounded-lg border border-dashed p-3 text-sm text-muted-foreground">
-            Ces éléments ne sont pas encore enregistrés. L&apos;écran de
-            validation permettra de les corriger, d&apos;en écarter et d&apos;en
-            ajouter avant enregistrement.
-          </p>
-        ) : null}
+        <p className="mt-1 text-sm text-muted-foreground">{counts}</p>
 
-        {items.length === 0 ? (
-          <p className="mt-6 rounded-lg border border-dashed p-10 text-center text-sm text-muted-foreground">
-            Aucun élément n&apos;a pu être extrait de ce compte rendu.
-          </p>
+        {isReviewed ? (
+          items.length === 0 ? (
+            <p className="mt-6 rounded-lg border border-dashed p-10 text-center text-sm text-muted-foreground">
+              Aucun élément n&apos;a été enregistré pour ce compte rendu.
+            </p>
+          ) : (
+            <ul className="mt-6 space-y-3">
+              {items.map((item, index) => (
+                <ItemPreview key={index} item={item} />
+              ))}
+            </ul>
+          )
         ) : (
-          <ul className="mt-6 space-y-3">
-            {items.map((item, index) => (
-              <ItemPreview key={index} item={item} />
-            ))}
-          </ul>
+          <>
+            <p className="mt-3 rounded-lg border border-dashed p-3 text-sm text-muted-foreground">
+              Ces éléments sont des propositions. Corrigez-les, décochez ceux
+              qui n&apos;ont pas lieu d&apos;être, ajoutez ce qui manque : rien
+              n&apos;est écrit en base avant votre validation.
+            </p>
+            <div className="mt-6">
+              <ReviewForm
+                meetingId={meeting.id}
+                initialItems={items.map(toEditableItem)}
+              />
+            </div>
+          </>
         )}
       </section>
     </main>
   );
+}
+
+// Passage du modèle d'extraction au modèle de formulaire : les champs de
+// saisie ne manipulent que des chaînes, null devient la chaîne vide. Le chemin
+// inverse est assuré par le schéma Zod côté serveur.
+function toEditableItem(item: PreviewItem): EditableItem {
+  return {
+    selected: true,
+    kind: item.kind as EditableItem["kind"],
+    description: item.description,
+    owner: item.owner ?? "",
+    dueDate: item.dueDate ? toDateInputValue(item.dueDate) : "",
+    priority: asPriority(item.priority),
+    status: asStatus(item.status),
+    needsReview: item.needsReview,
+    reviewReason: item.reviewReason ?? "",
+    sourceExcerpt: item.sourceExcerpt,
+    isManual: false,
+  };
+}
+
+// SQLite stocke des String sans contrainte : une valeur venant de la base est
+// revalidée avant d'alimenter un menu déroulant, jamais castée à l'aveugle.
+function asPriority(value: string | null): Priority {
+  return PRIORITIES.includes(value as Priority) ? (value as Priority) : "moyenne";
+}
+
+function asStatus(value: string | null): Status {
+  return STATUSES.includes(value as Status) ? (value as Status) : DEFAULT_STATUS;
 }
 
 function countByKind(items: PreviewItem[]): string {
