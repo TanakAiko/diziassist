@@ -46,8 +46,9 @@ Règles absolues :
 - Un sujet collectif (« l'équipe », « le groupe ») n'est pas un responsable : owner vaut null.
 - sourceExcerpt doit être une phrase RECOPIÉE MOT POUR MOT du compte rendu. Ne la reformule pas, ne la tronque pas au milieu d'un mot.
 - Classe en "pending" ce qui est en suspens, conditionné ou non validé, même si la phrase contient un verbe d'action.
-- Classe en "info" ce qui est annoncé ou rappelé sans travail à produire.
-- Classe en "action" uniquement ce qui constitue une tâche à réaliser.
+- Classe en "info" ce qui est annoncé ou rappelé sans travail à produire : une réunion à venir, un rappel.
+- Classe en "action" tout ce qui exprime une obligation ou un engagement — « doit », « devra », « est chargé de », un verbe au futur — y compris quand le sujet est une chose et non une personne. « La version doit être disponible » est une action, pas une information.
+- Une phrase qui lie deux obligations par « et » produit deux éléments distincts ; le second reprend le responsable du premier.
 - Une information ou un point en attente n'a ni responsable, ni échéance, ni priorité.
 - Les échéances relatives (« avant jeudi ») se calculent depuis la date de la réunion qui t'est donnée, et se renvoient au format AAAA-MM-JJ.
 - N'ajoute aucun élément qui ne soit pas dans le texte.`;
@@ -118,7 +119,9 @@ export function toExtractedItems(
 
       return {
         kind: item.kind,
-        description: item.description.trim(),
+        // Même présentation que l'extraction par règles : un intitulé de tâche
+        // ne se termine pas par un point.
+        description: item.description.trim().replace(/[.;:]+$/, ""),
         owner,
         dueDate,
         priority: isAction ? ((item.priority ?? "moyenne") as Priority) : null,
@@ -175,7 +178,9 @@ export async function extractWithAi(
     // (structured outputs), et pas seulement demandé dans le prompt.
     // Garde n°2 : la réponse est validée par le schéma Zod.
     const response = await client.messages.parse({
-      model: "claude-opus-5",
+      // L'extraction structurée est une tâche bornée : Sonnet suffit largement
+      // et coûte nettement moins qu'Opus pour un résultat équivalent ici.
+      model: "claude-sonnet-5",
       max_tokens: 16000,
       system: SYSTEM_PROMPT,
       messages: [{ role: "user", content: buildUserPrompt(input) }],

@@ -181,3 +181,18 @@ describe("gestion des pannes", () => {
     expect(message).not.toContain("sk-ant");
   });
 });
+
+describe("présentation alignée sur l'extraction par règles", () => {
+  it("retire la ponctuation finale d'un intitulé de tâche", () => {
+    const [item] = toExtractedItems(
+      [aiItem({ description: "Vérifier la configuration Play Store." })],
+      INPUT,
+    );
+    expect(item.description).toBe("Vérifier la configuration Play Store");
+  });
+
+  it("ne touche pas à une description déjà propre", () => {
+    const [item] = toExtractedItems([aiItem()], INPUT);
+    expect(item.description).toBe("Vérifier la configuration Play Store");
+  });
+});
