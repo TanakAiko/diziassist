@@ -1,0 +1,43 @@
+// Schéma diziAssist — voir docs/note-architecture.md, section 3.
+// SQLite ne supporte pas `enum` : les valeurs autorisées sont contraintes
+// côté TypeScript dans src/lib/constants.ts.
+
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "sqlite"
+}
+
+model Meeting {
+  id          String    @id @default(cuid())
+  title       String
+  meetingDate DateTime
+  rawContent  String
+  reviewedAt  DateTime? // null = extraction en attente de validation
+  createdAt   DateTime  @default(now())
+  items       Item[]
+}
+
+model Item {
+  id            String    @id @default(cuid())
+  kind          String    @default("action") // action | pending | info
+  description   String
+  owner         String? // null si non explicite dans le texte source
+  dueDate       DateTime? // null si non explicite dans le texte source
+  priority      String? // basse | moyenne | haute
+  status        String? // a_faire | en_cours | termine
+  needsReview   Boolean   @default(false)
+  reviewReason  String? // motif en clair, affiché à l'utilisateur
+  sourceExcerpt String // obligatoire : preuve d'origine de l'élément
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  meetingId     String
+  meeting       Meeting   @relation(fields: [meetingId], references: [id], onDelete: Cascade)
+
+  @@index([kind, status])
+  @@index([dueDate])
+  @@index([meetingId])
+}
