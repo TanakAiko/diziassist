@@ -213,6 +213,16 @@ describe("garde-fous", () => {
     expect(result[0].needsReview).toBe(true);
   });
 
+  it("ne prend pas un complément circonstanciel de tête pour un responsable", () => {
+    const result = extractWithRules({
+      rawContent: "Avant jeudi, Abdou doit vérifier la configuration.",
+      meetingDate: MEETING_DATE,
+    });
+    expect(result[0].owner).toBe("Abdou");
+    expect(result[0].description).toBe("Vérifier la configuration");
+    expect(iso(result[0].dueDate)).toBe("2026-07-30");
+  });
+
   it("marque une échéance à moins de 48 h en priorité haute", () => {
     const result = extractWithRules({
       rawContent: "Fatou doit livrer la maquette avant mardi.",

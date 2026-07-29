@@ -77,6 +77,12 @@ const SUBJECT_BLACKLIST = new Set([
   "cela", "ceci", "aucun", "certains", "plusieurs",
 ]);
 
+// « Avant jeudi, Abdou doit vérifier… » : une phrase peut s'ouvrir sur un
+// complément circonstanciel. Le sujet n'est alors pas le premier mot mais
+// celui qui suit la virgule. Sans cela, « Avant » deviendrait responsable.
+const LEADING_ADVERBIAL =
+  /^(?:avant|après|dès|d'ici|pour|lors|suite|selon|concernant|durant|pendant|en|au|aux|à|sur|sous|par|afin|ensuite|puis|enfin|désormais|prochainement|demain|aujourd'hui)\b[^,]{0,60},\s*/i;
+
 const WEEKDAYS: Record<string, number> = {
   dimanche: 0, lundi: 1, mardi: 2, mercredi: 3,
   jeudi: 4, vendredi: 5, samedi: 6,
@@ -160,11 +166,14 @@ type OwnerResult = { owner: string | null; reason: string | null };
 // pris au hasard : dans « la version Android doit être disponible », « Android »
 // est capitalisé et précède le déclencheur sans être responsable de quoi que ce soit.
 function findOwner(text: string): OwnerResult {
-  if (COLLECTIVE_SUBJECT.test(text)) {
+  // Le sujet est cherché après l'éventuel complément circonstanciel en tête.
+  const subject = text.replace(LEADING_ADVERBIAL, "");
+
+  if (COLLECTIVE_SUBJECT.test(subject)) {
     return { owner: null, reason: "Responsable collectif, à préciser" };
   }
 
-  const firstWord = text.match(/^([A-Za-zÀ-ÿ'-]+)/)?.[1];
+  const firstWord = subject.match(/^([A-Za-zÀ-ÿ'-]+)/)?.[1];
   if (!firstWord) {
     return { owner: null, reason: "Responsable non identifié" };
   }
@@ -202,6 +211,9 @@ function unwrapCompletive(text: string): string {
 
 function buildActionDescription(text: string, owner: string | null): string {
   let description = unwrapCompletive(text);
+
+  // Le complément circonstanciel de tête est déjà porté par dueDate.
+  description = description.replace(LEADING_ADVERBIAL, "");
 
   // Retrait du responsable en tête, lui-même porté par le champ owner.
   if (owner) {
