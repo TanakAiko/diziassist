@@ -19,6 +19,14 @@ export const KIND_LABELS: Record<Kind, string> = {
   info: "Information",
 };
 
+// Le pluriel ne s'obtient pas en ajoutant un « s » : « point en attente »
+// donnerait « point en attentes ». Les deux formes sont donc explicites.
+export const KIND_LABELS_PLURAL: Record<Kind, string> = {
+  action: "actions",
+  pending: "points en attente",
+  info: "informations",
+};
+
 export const PRIORITY_LABELS: Record<Priority, string> = {
   basse: "Basse",
   moyenne: "Moyenne",

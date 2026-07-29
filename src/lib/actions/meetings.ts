@@ -3,7 +3,11 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { prisma } from "@/lib/db";
-import { meetingFormSchema, meetingIdSchema } from "@/lib/validation/meeting";
+import {
+  meetingFormSchema,
+  meetingIdSchema,
+  toFieldErrors,
+} from "@/lib/validation/meeting";
 
 // Retour commun aux formulaires : soit l'action réussit, soit elle renvoie
 // un message par champ, affiché sous le champ concerné (jamais d'alert()).
@@ -23,15 +27,7 @@ export async function createMeeting(
   });
 
   if (!parsed.success) {
-    const errors: Record<string, string> = {};
-    for (const issue of parsed.error.issues) {
-      const field = issue.path[0];
-      // Premier message par champ : inutile d'en empiler plusieurs.
-      if (typeof field === "string" && !errors[field]) {
-        errors[field] = issue.message;
-      }
-    }
-    return { errors };
+    return { errors: toFieldErrors(parsed.error) };
   }
 
   // Le compte rendu est créé sans aucun item : l'extraction est proposée à

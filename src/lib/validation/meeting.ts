@@ -29,6 +29,19 @@ export const meetingFormSchema = z.object({
 
 export type MeetingFormValues = z.infer<typeof meetingFormSchema>;
 
+// Un message par champ, affiché sous le champ concerné. Le premier suffit :
+// empiler « obligatoire » et « trop court » n'aide pas à corriger la saisie.
+export function toFieldErrors(error: z.ZodError): Record<string, string> {
+  const errors: Record<string, string> = {};
+  for (const issue of error.issues) {
+    const field = issue.path[0];
+    if (typeof field === "string" && !errors[field]) {
+      errors[field] = issue.message;
+    }
+  }
+  return errors;
+}
+
 export const meetingIdSchema = z
   .string()
   .trim()

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { meetingFormSchema } from "./meeting";
+import { meetingFormSchema, toFieldErrors } from "./meeting";
 
 const validInput = {
   title: "Réunion Projet Quizz+",
@@ -34,6 +34,28 @@ describe("meetingFormSchema", () => {
       rawContent: "Trop court.",
     });
     expect(result.success).toBe(false);
+  });
+
+  it("renvoie un message par champ fautif, prêt à afficher sous le champ", () => {
+    const result = meetingFormSchema.safeParse({
+      title: "",
+      meetingDate: "pas une date",
+      rawContent: "court",
+    });
+    expect(result.success).toBe(false);
+    if (result.success) return;
+
+    const errors = toFieldErrors(result.error);
+    expect(Object.keys(errors).sort()).toEqual([
+      "meetingDate",
+      "rawContent",
+      "title",
+    ]);
+    expect(errors.title).toBe("Le titre est obligatoire.");
+    // Les messages sont en français et adressés à l'utilisateur, pas au développeur.
+    for (const message of Object.values(errors)) {
+      expect(message).toMatch(/^[A-ZÀ-Ý].*\.$/);
+    }
   });
 
   it("rejette une entrée non textuelle sans lever d'exception", () => {

@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   KINDS,
   KIND_LABELS,
+  KIND_LABELS_PLURAL,
   PRIORITIES,
   PRIORITY_LABELS,
   PRIORITY_RANK,
@@ -12,6 +13,7 @@ import {
 describe("constantes", () => {
   it("associe un libellé français à chaque valeur stockée", () => {
     expect(Object.keys(KIND_LABELS).sort()).toEqual([...KINDS].sort());
+    expect(Object.keys(KIND_LABELS_PLURAL).sort()).toEqual([...KINDS].sort());
     expect(Object.keys(PRIORITY_LABELS).sort()).toEqual([...PRIORITIES].sort());
     expect(Object.keys(STATUS_LABELS).sort()).toEqual([...STATUSES].sort());
   });
