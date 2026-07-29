@@ -16,6 +16,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { ItemPreview, type PreviewItem } from "@/components/item-preview";
 import { ReviewForm, type EditableItem } from "@/components/review-form";
+import { deserializeProposal } from "@/lib/extraction/proposal";
 import { toDateInputValue } from "@/lib/dates";
 
 // Next 15 : params est asynchrone.
@@ -34,16 +35,35 @@ export default async function MeetingPage({
     notFound();
   }
 
-  // Tant que le compte rendu n'est pas validé, l'extraction est rejouée à
-  // l'affichage : elle est déterministe, aucun état intermédiaire à stocker.
-  // Rien n'est écrit en base à ce stade.
   const isReviewed = meeting.reviewedAt !== null;
+
+  // Une proposition IA a été mémorisée à la création : on la relit plutôt que
+  // de relancer un appel facturé à chaque affichage. Si elle est illisible, on
+  // retombe sur les règles comme pour n'importe quel autre échec.
+  const aiProposal = meeting.aiProposal
+    ? deserializeProposal(meeting.aiProposal)
+    : null;
+
+  // Sinon l'extraction par règles est rejouée à l'affichage : elle est
+  // déterministe et gratuite, il n'y a aucun état intermédiaire à stocker.
+  // Rien n'est écrit en base à ce stade.
   const items: PreviewItem[] = isReviewed
     ? meeting.items
-    : await extract({
+    : (aiProposal ??
+      (await extract({
         rawContent: meeting.rawContent,
         meetingDate: meeting.meetingDate,
-      });
+      })));
+
+  // L'IA a été demandée mais n'a rien donné d'exploitable : le motif est
+  // affiché en clair et l'écran fonctionne avec le résultat des règles.
+  const aiFallbackReason =
+    !isReviewed && !aiProposal
+      ? (meeting.aiError ??
+        (meeting.aiProposal
+          ? "La proposition enregistrée est illisible."
+          : null))
+      : null;
 
   const counts = countByKind(items);
 
@@ -98,7 +118,22 @@ export default async function MeetingPage({
           )
         ) : (
           <>
+            {/* L'échec de l'IA est dit franchement, avec son motif, plutôt que
+                masqué par un repli silencieux. */}
+            {aiFallbackReason ? (
+              <p className="mt-3 rounded-lg border border-destructive p-3 text-sm">
+                <span className="font-medium text-destructive">
+                  L&apos;analyse par IA a échoué —{" "}
+                </span>
+                {aiFallbackReason} Les éléments ci-dessous proviennent de
+                l&apos;analyse par règles.
+              </p>
+            ) : null}
+
             <p className="mt-3 rounded-lg border border-dashed p-3 text-sm text-muted-foreground">
+              <span className="font-medium text-foreground">
+                {aiProposal ? "Analyse par IA. " : "Analyse par règles. "}
+              </span>
               Ces éléments sont des propositions. Corrigez-les, décochez ceux
               qui n&apos;ont pas lieu d&apos;être, ajoutez ce qui manque : rien
               n&apos;est écrit en base avant votre validation.

@@ -18,7 +18,17 @@ model Meeting {
   rawContent  String
   reviewedAt  DateTime? // null = extraction en attente de validation
   createdAt   DateTime  @default(now())
-  items       Item[]
+
+  // L'extraction par règles est déterministe et gratuite : elle est rejouée à
+  // chaque affichage. L'extraction par IA ne l'est pas — un appel facturé dont
+  // le résultat varie — sa proposition est donc mémorisée ici, en JSON, jusqu'à
+  // la validation. null signifie « analysé par les règles ».
+  aiProposal String?
+  // Motif d'échec de l'IA, affiché en clair. L'analyse retombe alors sur les
+  // règles : l'utilisateur n'est jamais bloqué par une panne de l'API.
+  aiError    String?
+
+  items Item[]
 }
 
 model Item {

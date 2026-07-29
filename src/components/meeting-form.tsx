@@ -11,13 +11,42 @@ import { Textarea } from "@/components/ui/textarea";
 
 const initialState: FormState = {};
 
-function SubmitButton() {
-  // useFormStatus doit vivre dans un enfant du <form> pour observer son état.
-  const { pending } = useFormStatus();
+// Deux boutons de soumission dans le même formulaire. Chacun porte le même
+// name avec une value différente : le serveur lit `mode` pour savoir lequel a
+// été pressé. useFormStatus expose le FormData envoyé, ce qui permet de
+// n'afficher « en cours » que sur le bouton réellement cliqué.
+function SubmitButtons({ aiAvailable }: { aiAvailable: boolean }) {
+  const { pending, data } = useFormStatus();
+  const submittedMode = data?.get("mode");
+
   return (
-    <Button type="submit" disabled={pending}>
-      {pending ? "Analyse en cours…" : "Analyser le compte rendu"}
-    </Button>
+    <div className="space-y-3">
+      <div className="flex flex-wrap items-center gap-3">
+        <Button type="submit" name="mode" value="rules" disabled={pending}>
+          {pending && submittedMode === "rules"
+            ? "Analyse en cours…"
+            : "Analyser le compte rendu"}
+        </Button>
+
+        <Button
+          type="submit"
+          name="mode"
+          value="ia"
+          variant="outline"
+          disabled={pending || !aiAvailable}
+        >
+          {pending && submittedMode === "ia"
+            ? "Analyse par l'IA en cours…"
+            : "Analyser avec l'IA"}
+        </Button>
+      </div>
+
+      <p className="text-sm text-muted-foreground">
+        {aiAvailable
+          ? "L'analyse par règles est immédiate et fonctionne hors ligne. L'analyse par IA comprend des tournures plus variées, mais demande quelques secondes. En cas d'échec, les règles prennent le relais."
+          : "L'analyse par IA est indisponible : aucune clé API n'est configurée sur le serveur. L'analyse par règles reste pleinement fonctionnelle."}
+      </p>
+    </div>
   );
 }
 
@@ -30,7 +59,7 @@ function FieldError({ id, message }: { id: string; message?: string }) {
   );
 }
 
-export function MeetingForm() {
+export function MeetingForm({ aiAvailable }: { aiAvailable: boolean }) {
   const [state, formAction] = useActionState(createMeeting, initialState);
   const errors = state.errors ?? {};
 
@@ -81,7 +110,7 @@ export function MeetingForm() {
         <FieldError id="rawContent-error" message={errors.rawContent} />
       </div>
 
-      <SubmitButton />
+      <SubmitButtons aiAvailable={aiAvailable} />
     </form>
   );
 }

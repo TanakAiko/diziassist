@@ -114,7 +114,7 @@ type Segment = {
 
 // Les apostrophes typographiques d'un copier-coller (Word, Google Docs) et les
 // espaces insécables casseraient silencieusement toutes les expressions régulières.
-function normalize(text: string): string {
+export function normalize(text: string): string {
   return text.replace(/[’‘]/g, "'").replace(/ /g, " ");
 }
 

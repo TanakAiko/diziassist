@@ -30,9 +30,39 @@ export async function createMeeting(
     return { errors: toFieldErrors(parsed.error) };
   }
 
+  // Deux boutons de soumission : l'analyse par règles reste le comportement
+  // par défaut, l'IA n'est retenue que si l'utilisateur la demande explicitement.
+  const useAi = formData.get("mode") === "ia";
+
+  // L'appel à l'IA a lieu maintenant, une seule fois, et sa proposition est
+  // mémorisée. Contrairement aux règles — déterministes et gratuites — on ne
+  // peut pas la rejouer à chaque affichage de la page.
+  let aiProposal: string | null = null;
+  let aiError: string | null = null;
+
+  if (useAi) {
+    const { extractWithAi } = await import("@/lib/extraction/ai");
+    const { serializeProposal } = await import("@/lib/extraction/proposal");
+
+    const outcome = await extractWithAi({
+      rawContent: parsed.data.rawContent,
+      meetingDate: parsed.data.meetingDate,
+    });
+
+    if (outcome.status === "ok") {
+      aiProposal = serializeProposal(outcome.items);
+    } else {
+      // L'échec n'interrompt pas la création : le compte rendu est enregistré,
+      // l'écran de validation affiche le motif et les éléments issus des règles.
+      aiError = outcome.message;
+    }
+  }
+
   // Le compte rendu est créé sans aucun item : l'extraction est proposée à
   // l'écran suivant et rien n'est enregistré avant validation explicite.
-  const meeting = await prisma.meeting.create({ data: parsed.data });
+  const meeting = await prisma.meeting.create({
+    data: { ...parsed.data, aiProposal, aiError },
+  });
 
   revalidatePath("/");
   redirect(`/meetings/${meeting.id}`);

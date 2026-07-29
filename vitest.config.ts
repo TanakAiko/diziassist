@@ -11,6 +11,13 @@ export default defineConfig({
   resolve: {
     alias: {
       "@": path.resolve(__dirname, "./src"),
+      // Les modules serveur importent « server-only », qui lève une erreur dès
+      // qu'il est chargé hors d'un Server Component. Les tests tournent dans
+      // Node : on lui substitue un module inerte, sans toucher au code livré.
+      "server-only": path.resolve(
+        __dirname,
+        "./src/lib/testing/server-only.stub.ts",
+      ),
     },
   },
 });
