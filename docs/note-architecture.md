@@ -155,7 +155,7 @@ L'ordre est le cœur de la logique. « Le budget n'a pas encore été validé »
 | Champ | Règle |
 |---|---|
 | Responsable | Mot capitalisé précédant un déclencheur, hors liste noire (`Le`, `La`, `Les`, `Il`, `Ce`, `Cette`, `On`, `Chaque`…). Collectifs (`l'équipe`, `le groupe`) → `null` + motif. Jamais de défaut. |
-| Échéance | Jour de semaine résolu à sa prochaine occurrence **strictement après `meetingDate`**. |
+| Échéance | Jour de semaine, **uniquement s'il est introduit par un marqueur** (`avant`, `d'ici`, `au plus tard`, `pour`), résolu à sa prochaine occurrence **strictement après `meetingDate`**. Sans marqueur, aucune date : « le compte rendu du lundi précédent » parle du passé. |
 | Priorité | Défaut `moyenne`. `haute` sur « urgent », « bloquant », ou échéance < 48 h. `basse` sur « si possible », « à terme ». |
 | Description | Retrait du responsable, du modal et de la clause temporelle ; verbe à l'infinitif ; majuscule initiale. |
 | Coordination | Une phrase liant deux obligations par « et » produit deux éléments ; le second hérite du responsable. |
@@ -168,7 +168,7 @@ Le CR de test est daté du **27 juillet 2026, un lundi**. Donc « avant jeudi »
 
 | Élément | kind | owner | dueDate | Signalement |
 |---|---|---|---|---|
-| Rendre la version Android disponible pour les tests | action | null | null | Responsable collectif |
+| Rendre la version Android disponible pour les tests | action | null | null | Responsable non identifié |
 | Vérifier la configuration Play Store | action | Abdou | 2026-07-30 | — |
 | Corriger les erreurs signalées sur le classement | action | Awa | 2026-07-31 | — |
 | Préparer le message destiné aux testeurs | action | Mamadou | null | Échéance non précisée |
@@ -181,11 +181,11 @@ Le CR de test est daté du **27 juillet 2026, un lundi**. Donc « avant jeudi »
 
 Même interface `Extractor`. Prompt imposant du JSON strict et interdisant l'invention. Trois gardes côté serveur :
 
-1. Parsing tolérant aux erreurs
-2. Validation Zod du JSON
-3. **Vérification que chaque `sourceExcerpt` cité existe réellement dans le texte source** — sinon l'élément est écarté
+1. Format **imposé par l'API** (sorties structurées), pas seulement demandé dans le prompt
+2. Validation Zod de la réponse
+3. **Vérification que chaque `sourceExcerpt` cité existe mot pour mot dans le texte source** — sinon l'élément est écarté
 
-Sans clé ou en cas d'échec : repli automatique et silencieux sur les règles.
+Sans clé ou en cas d'échec : repli automatique sur les règles, **avec le motif affiché en clair**. Le repli n'est jamais silencieux — l'utilisateur sait quelle analyse a produit ce qu'il voit.
 
 ---
 
@@ -198,7 +198,7 @@ L'extraction par règles étant déterministe, aucun état intermédiaire n'est 
 | Case à cocher par ligne | Décoché = non enregistré, mais reste visible |
 | Tous les champs éditables | L'extraction ne fait que pré-remplir un formulaire |
 | Sélecteur de `kind` par ligne | Permet de reclasser : la validation porte sur la classification autant que sur les valeurs |
-| Compte rendu original accessible | Panneau dépliable permanent |
+| Compte rendu original accessible | Colonne collante à droite : comparer une proposition à la phrase qui l'a produite est le geste central de cet écran |
 | `sourceExcerpt` sous chaque ligne | Traçabilité au niveau de la phrase |
 | Badge avec motif en clair | Pas une icône seule : la raison explicite |
 | Ajout manuel | Une action manquante ne doit pas être perdue |
@@ -236,7 +236,7 @@ Authentification et multi-utilisateurs · notifications · export CSV/PDF · com
 
 - Tournures françaises standard uniquement
 - Pas de résolution de pronoms inter-phrases
-- Faux positifs possibles sur le futur en `-era` (« sera », « verra »)
+- Futurs irréguliers en `-rront` non reconnus (« enverront », « verront ») — les auxiliaires (« sera », « pourra ») sont écartés par le seuil de trois lettres du déclencheur
 - Dates relatives limitées aux jours de la semaine
 - Rendement décroissant : au-delà d'une vingtaine de règles, les cas rares se contredisent
 
