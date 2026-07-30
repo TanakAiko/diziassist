@@ -4,14 +4,30 @@
 
 @custom-variant dark (&:is(.dark *));
 
-/* Les tokens shadcn sont conservés — ils alimentent les primitives de
-   components/ui — mais leurs valeurs sont celles de diziAssist, pas celles du
-   template. Trois ajouts propres au métier : overdue, attention, done. */
+/* ---------------------------------------------------------------------------
+   Palette : celle de dizigroup.net, relevée dans la feuille de style du site.
+   Bronze #c9995e, texte #1f1f1f, off-white chaud #f8f8f7, bordure #ededed.
+
+   Deux écarts assumés, tous deux pour le contraste (WCAG AA, 4.5:1 sur blanc) :
+   - le bronze #c9995e ne plafonne qu'à 2.56:1 : il reste une couleur de
+     remplissage — filets, aplats, anneau de focus — jamais une couleur de
+     texte. #8a6636 (5.21:1) en est la version texte.
+   - le gris secondaire de la charte, #858585, plafonne à 3.69:1. Assombri à
+     #6b6b6b (5.33:1), sinon les métadonnées seraient illisibles.
+
+   Échelle typographique, appliquée partout :
+     titre de page      text-3xl  30px  condensé, semibold
+     titre de section    text-xl  20px  condensé, medium
+     corps de texte     text-base 16px
+     données (mono)      text-sm  14px  dates, responsables, compteurs
+     intitulé capitales  text-xs  12px  .eyebrow
+--------------------------------------------------------------------------- */
+
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
 
-  /* Une seule famille, trois voix. Le mono partage les proportions du sans :
+  /* Une seule famille, trois rôles. Le mono partage les proportions du sans :
      les colonnes de dates et de responsables s'alignent sans réglage. */
   --font-sans: var(--font-plex-sans);
   --font-mono: var(--font-plex-mono);
@@ -34,8 +50,12 @@
   --color-card-foreground: var(--card-foreground);
   --color-card: var(--card);
 
-  /* Les trois états métier. Ce sont des couleurs sémantiques, pas décoratives :
-     un élément est en retard, à confirmer, ou terminé. Rien d'autre n'y touche. */
+  /* Le bronze DIZIGROUP, en deux usages distincts. */
+  --color-brand: var(--brand);
+  --color-brand-text: var(--brand-text);
+
+  /* Les trois états métier. Couleurs sémantiques, pas décoratives : un élément
+     est en retard, à confirmer, ou terminé. Rien d'autre n'y touche. */
   --color-overdue: var(--overdue);
   --color-attention: var(--attention);
   --color-done: var(--done);
@@ -49,60 +69,67 @@
   --radius-4xl: calc(var(--radius) * 2.6);
 }
 
-/* Neutre froid (teinte 250) plutôt que le gris pur du template : un outil de
-   suivi se lit mieux sur une ardoise légèrement bleutée. Accent unique en bleu
-   pétrole — tout ce qui est cliquable, et rien d'autre. */
 :root {
-  --background: oklch(0.99 0.002 250);
-  --foreground: oklch(0.21 0.015 250);
-  --card: oklch(1 0 0);
-  --card-foreground: oklch(0.21 0.015 250);
-  --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.21 0.015 250);
-  --primary: oklch(0.45 0.075 225);
-  --primary-foreground: oklch(0.99 0.005 225);
-  --secondary: oklch(0.96 0.004 250);
-  --secondary-foreground: oklch(0.3 0.015 250);
-  --muted: oklch(0.965 0.004 250);
-  --muted-foreground: oklch(0.52 0.012 250);
-  --accent: oklch(0.95 0.008 225);
-  --accent-foreground: oklch(0.38 0.07 225);
-  --destructive: oklch(0.52 0.16 25);
-  --border: oklch(0.91 0.005 250);
-  --input: oklch(0.89 0.006 250);
-  --ring: oklch(0.45 0.075 225);
+  --background: #ffffff;
+  --foreground: #1f1f1f;
+  --card: #ffffff;
+  --card-foreground: #1f1f1f;
+  --popover: #ffffff;
+  --popover-foreground: #1f1f1f;
+  --primary: #1a1a1a;
+  --primary-foreground: #ffffff;
+  --secondary: #f8f8f7;
+  --secondary-foreground: #1f1f1f;
+  --muted: #f8f8f7;
+  --muted-foreground: #6b6b6b;
+  --accent: #f6efe6;
+  --accent-foreground: #8a6636;
+  --destructive: #e40014;
+  --border: #ededed;
+  --input: #e0e0e0;
+  --ring: #c9995e;
 
-  --overdue: oklch(0.52 0.16 25);
-  --attention: oklch(0.55 0.11 70);
-  --done: oklch(0.48 0.075 155);
+  --brand: #c9995e;
+  --brand-text: #8a6636;
 
-  /* 6 px : assez pour ne pas être brutal, assez peu pour rester précis. */
-  --radius: 0.375rem;
+  --overdue: #e40014;
+  --attention: #a86800;
+  --done: #00875c;
+
+  /* La charte est à 0.75rem. On reste à 0.5rem : la direction retenue est celle
+     d'un outil dense, et des lignes serrées se lisent mieux avec un angle net. */
+  --radius: 0.5rem;
 }
 
+/* dizigroup.net n'a pas de thème sombre. Ce bloc existe parce que les
+   primitives shadcn portent des variantes dark: — il transpose la charte
+   plutôt que d'en inventer une seconde. */
 .dark {
-  --background: oklch(0.19 0.012 250);
-  --foreground: oklch(0.97 0.003 250);
-  --card: oklch(0.23 0.014 250);
-  --card-foreground: oklch(0.97 0.003 250);
-  --popover: oklch(0.23 0.014 250);
-  --popover-foreground: oklch(0.97 0.003 250);
-  --primary: oklch(0.72 0.1 225);
-  --primary-foreground: oklch(0.19 0.012 250);
-  --secondary: oklch(0.29 0.016 250);
-  --secondary-foreground: oklch(0.97 0.003 250);
-  --muted: oklch(0.29 0.016 250);
-  --muted-foreground: oklch(0.69 0.012 250);
-  --accent: oklch(0.31 0.03 225);
-  --accent-foreground: oklch(0.85 0.07 225);
-  --destructive: oklch(0.68 0.17 25);
-  --border: oklch(1 0 0 / 12%);
-  --input: oklch(1 0 0 / 16%);
-  --ring: oklch(0.72 0.1 225);
+  --background: #1a1a1a;
+  --foreground: #f5f5f4;
+  --card: #212121;
+  --card-foreground: #f5f5f4;
+  --popover: #212121;
+  --popover-foreground: #f5f5f4;
+  --primary: #f5f5f4;
+  --primary-foreground: #1a1a1a;
+  --secondary: #2a2a29;
+  --secondary-foreground: #f5f5f4;
+  --muted: #2a2a29;
+  --muted-foreground: #a8a8a6;
+  --accent: #3a3128;
+  --accent-foreground: #e0bd8e;
+  --destructive: #ff6568;
+  --border: #ffffff1f;
+  --input: #ffffff2b;
+  --ring: #c9995e;
 
-  --overdue: oklch(0.68 0.17 25);
-  --attention: oklch(0.75 0.12 70);
-  --done: oklch(0.68 0.09 155);
+  --brand: #c9995e;
+  --brand-text: #e0bd8e;
+
+  --overdue: #ff6568;
+  --attention: #f99c00;
+  --done: #00bb7f;
 }
 
 @layer base {
@@ -117,7 +144,7 @@
   }
 
   /* Les titres passent en condensé. C'est le seul endroit où la famille change,
-     et cela suffit à distinguer la hiérarchie sans jouer sur la taille. */
+     et cela suffit à marquer la hiérarchie sans forcer sur la taille. */
   h1,
   h2,
   h3 {
@@ -125,15 +152,8 @@
   }
 }
 
-/* Intitulé en capitales : sert à nommer une zone (« Éléments proposés »,
-   « Filtres ») sans consommer une taille de titre. */
+/* Intitulé en capitales : nomme une zone ou qualifie une ligne sans consommer
+   une taille de titre. */
 @utility eyebrow {
   @apply font-heading text-xs font-medium tracking-[0.12em] uppercase;
-}
-
-/* Élément signature : la phrase du compte rendu qui justifie un élément.
-   Traitée comme une citation — mono, filet à gauche, guillemets français.
-   C'est la règle « ne jamais inventer de donnée » rendue visible. */
-@utility source-excerpt {
-  @apply border-l-2 border-border pl-3 font-mono text-xs leading-relaxed text-muted-foreground;
 }

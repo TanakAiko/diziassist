@@ -1,23 +1,20 @@
-import Link from "next/link";
 import { notFound } from "next/navigation";
 import { prisma } from "@/lib/db";
-import { formatLongDate } from "@/lib/dates";
+import { formatLongDate, toDateInputValue } from "@/lib/dates";
 import { extract } from "@/lib/extraction";
 import {
   DEFAULT_STATUS,
-  KIND_LABELS,
+  KINDS,
   KIND_LABELS_PLURAL,
   PRIORITIES,
   STATUSES,
-  type Kind,
   type Priority,
   type Status,
 } from "@/lib/constants";
-import { Badge } from "@/components/ui/badge";
 import { ItemPreview, type PreviewItem } from "@/components/item-preview";
 import { ReviewForm, type EditableItem } from "@/components/review-form";
+import { ReviewStateBadge } from "@/components/review-state-badge";
 import { deserializeProposal } from "@/lib/extraction/proposal";
-import { toDateInputValue } from "@/lib/dates";
 
 // Next 15 : params est asynchrone.
 export default async function MeetingPage({
@@ -65,89 +62,111 @@ export default async function MeetingPage({
           : null))
       : null;
 
-  const counts = countByKind(items);
-
   return (
-    <main className="mx-auto max-w-3xl px-6 py-10">
-      <Link href="/" className="text-sm text-muted-foreground hover:underline">
-        ← Comptes rendus
-      </Link>
-
-      <header className="mt-4 flex items-start justify-between gap-4">
+    <main className="mx-auto max-w-5xl px-6 py-10">
+      <header className="flex flex-wrap items-start justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-semibold">{meeting.title}</h1>
-          <p className="mt-1 text-sm text-muted-foreground">
+          <h1 className="text-3xl font-semibold tracking-tight">
+            {meeting.title}
+          </h1>
+          <p className="mt-1 font-mono text-sm text-muted-foreground">
             Réunion du {formatLongDate(meeting.meetingDate)}
           </p>
         </div>
-        {isReviewed ? (
-          <Badge variant="secondary">Validé</Badge>
-        ) : (
-          <Badge>À valider</Badge>
-        )}
+        <ReviewStateBadge reviewedAt={meeting.reviewedAt} />
       </header>
 
-      <section className="mt-8">
-        <details className="rounded-lg border">
-          <summary className="cursor-pointer p-4 text-sm font-medium">
-            Compte rendu original
-          </summary>
-          <p className="whitespace-pre-wrap border-t p-4 text-sm leading-relaxed">
+      {/* Deux colonnes : l'extraction à gauche, le texte source à droite et
+          collant. Comparer une proposition à la phrase qui l'a produite est le
+          geste central de cet écran — les deux doivent tenir à l'écran ensemble. */}
+      <div className="mt-8 grid gap-8 lg:grid-cols-[1fr_18rem] lg:items-start">
+        <div className="min-w-0">
+          {isReviewed ? (
+            <ReviewedItems items={items} />
+          ) : (
+            <>
+              {/* L'échec de l'IA est dit franchement, avec son motif, plutôt que
+                  masqué par un repli silencieux. */}
+              {aiFallbackReason ? (
+                <p className="rounded-md border border-destructive/40 bg-destructive/5 p-4 text-base">
+                  <span className="font-medium text-destructive">
+                    L&apos;analyse par IA a échoué —{" "}
+                  </span>
+                  {aiFallbackReason} Les éléments ci-dessous proviennent de
+                  l&apos;analyse par règles.
+                </p>
+              ) : null}
+
+              <div className="mt-4 rounded-md border border-dashed bg-muted/40 p-4">
+                <p className="eyebrow text-brand-text">
+                  {aiProposal ? "Analyse par IA" : "Analyse par règles"}
+                </p>
+                <p className="mt-1.5 text-base text-muted-foreground">
+                  Ces éléments sont des propositions. Corrigez-les, décochez ceux
+                  qui n&apos;ont pas lieu d&apos;être, ajoutez ce qui manque :
+                  rien n&apos;est écrit en base avant votre validation.
+                </p>
+              </div>
+
+              <div className="mt-6">
+                <ReviewForm
+                  meetingId={meeting.id}
+                  initialItems={items.map(toEditableItem)}
+                />
+              </div>
+            </>
+          )}
+        </div>
+
+        <aside className="lg:sticky lg:top-6">
+          <h2 className="eyebrow text-muted-foreground">Compte rendu original</h2>
+          <p className="mt-2 max-h-[60vh] overflow-y-auto rounded-md border bg-muted/40 p-4 text-sm leading-relaxed whitespace-pre-wrap">
             {meeting.rawContent}
           </p>
-        </details>
-      </section>
+        </aside>
+      </div>
+    </main>
+  );
+}
 
-      <section className="mt-8">
-        <h2 className="text-lg font-medium">
-          {isReviewed ? "Éléments enregistrés" : "Éléments proposés"}
-        </h2>
-        <p className="mt-1 text-sm text-muted-foreground">{counts}</p>
+// Les éléments enregistrés sont regroupés par nature. Le compte rendu de
+// référence doit produire 5 actions, 2 points en attente et 1 information :
+// regroupé, ce résultat se vérifie d'un coup d'œil au lieu de se compter à la
+// main dans une liste unique.
+function ReviewedItems({ items }: { items: PreviewItem[] }) {
+  if (items.length === 0) {
+    return (
+      <p className="rounded-md border border-dashed bg-card px-6 py-14 text-center text-base text-muted-foreground">
+        Aucun élément n&apos;a été enregistré pour ce compte rendu.
+      </p>
+    );
+  }
 
-        {isReviewed ? (
-          items.length === 0 ? (
-            <p className="mt-6 rounded-lg border border-dashed p-10 text-center text-sm text-muted-foreground">
-              Aucun élément n&apos;a été enregistré pour ce compte rendu.
-            </p>
-          ) : (
-            <ul className="mt-6 space-y-3">
-              {items.map((item, index) => (
+  return (
+    <div className="space-y-8">
+      {KINDS.map((kind) => {
+        const group = items.filter((item) => item.kind === kind);
+        if (group.length === 0) return null;
+
+        return (
+          <section key={kind}>
+            <h2 className="flex items-baseline gap-2 text-xl font-medium">
+              <span className="first-letter:uppercase">
+                {KIND_LABELS_PLURAL[kind]}
+              </span>
+              <span className="font-mono text-sm text-muted-foreground">
+                {group.length}
+              </span>
+            </h2>
+            <ul className="mt-3 overflow-hidden rounded-md border bg-card">
+              {group.map((item, index) => (
                 <ItemPreview key={index} item={item} />
               ))}
             </ul>
-          )
-        ) : (
-          <>
-            {/* L'échec de l'IA est dit franchement, avec son motif, plutôt que
-                masqué par un repli silencieux. */}
-            {aiFallbackReason ? (
-              <p className="mt-3 rounded-lg border border-destructive p-3 text-sm">
-                <span className="font-medium text-destructive">
-                  L&apos;analyse par IA a échoué —{" "}
-                </span>
-                {aiFallbackReason} Les éléments ci-dessous proviennent de
-                l&apos;analyse par règles.
-              </p>
-            ) : null}
-
-            <p className="mt-3 rounded-lg border border-dashed p-3 text-sm text-muted-foreground">
-              <span className="font-medium text-foreground">
-                {aiProposal ? "Analyse par IA. " : "Analyse par règles. "}
-              </span>
-              Ces éléments sont des propositions. Corrigez-les, décochez ceux
-              qui n&apos;ont pas lieu d&apos;être, ajoutez ce qui manque : rien
-              n&apos;est écrit en base avant votre validation.
-            </p>
-            <div className="mt-6">
-              <ReviewForm
-                meetingId={meeting.id}
-                initialItems={items.map(toEditableItem)}
-              />
-            </div>
-          </>
-        )}
-      </section>
-    </main>
+          </section>
+        );
+      })}
+    </div>
   );
 }
 
@@ -178,19 +197,4 @@ function asPriority(value: string | null): Priority {
 
 function asStatus(value: string | null): Status {
   return STATUSES.includes(value as Status) ? (value as Status) : DEFAULT_STATUS;
-}
-
-function countByKind(items: PreviewItem[]): string {
-  const order: Kind[] = ["action", "pending", "info"];
-  const parts = order
-    .map((kind) => {
-      const total = items.filter((item) => item.kind === kind).length;
-      if (total === 0) return null;
-      const label =
-        total > 1 ? KIND_LABELS_PLURAL[kind] : KIND_LABELS[kind].toLowerCase();
-      return `${total} ${label}`;
-    })
-    .filter((part): part is string => part !== null);
-
-  return parts.length > 0 ? parts.join(" · ") : "Aucun élément";
 }

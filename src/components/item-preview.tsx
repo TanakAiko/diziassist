@@ -1,13 +1,13 @@
 import {
-  KIND_LABELS,
   PRIORITY_LABELS,
   STATUS_LABELS,
-  type Kind,
   type Priority,
   type Status,
 } from "@/lib/constants";
 import { formatDate, isOverdue } from "@/lib/dates";
-import { Badge } from "@/components/ui/badge";
+import { itemState } from "@/lib/items";
+import { SourceExcerpt } from "@/components/source-excerpt";
+import { StateRule } from "@/components/state-rule";
 import { cn } from "@/lib/utils";
 
 // Vue commune à un élément proposé par l'extraction et à un élément enregistré :
@@ -33,60 +33,84 @@ function label<T extends string>(
   return labels[value as T] ?? value;
 }
 
+// La ligne ne porte plus de badge de nature : la fiche regroupe les éléments par
+// nature, l'information est donc déjà dans le titre de section au-dessus.
 export function ItemPreview({ item }: { item: PreviewItem }) {
   const overdue = isOverdue(item.dueDate, item.status);
+  const done = item.status === "termine";
+  const isAction = item.kind === "action";
+
+  // Pour une action, responsable et échéance sont affichés même absents : c'est
+  // le manque qui est l'information, et le motif juste en dessous l'explique.
+  // Pour une information ou un point en attente, ces champs sont nuls par règle
+  // métier — la colonne disparaît au lieu d'afficher quatre tirets.
+  const meta = isAction
+    ? [
+        { label: "Responsable", value: item.owner },
+        {
+          label: "Échéance",
+          value: item.dueDate ? formatDate(item.dueDate) : null,
+          overdue,
+        },
+        { label: "Priorité", value: label<Priority>(PRIORITY_LABELS, item.priority) },
+        { label: "Statut", value: label<Status>(STATUS_LABELS, item.status) },
+      ]
+    : [];
 
   return (
-    <li className="rounded-lg border p-4">
-      <div className="flex flex-wrap items-center gap-2">
-        <Badge variant="outline">
-          {label<Kind>(KIND_LABELS, item.kind) ?? item.kind}
-        </Badge>
-        {item.needsReview ? <Badge>À confirmer</Badge> : null}
-        {overdue ? <Badge variant="destructive">En retard</Badge> : null}
+    // Deux colonnes : ce qui est à lire à gauche, ce qui est à consulter à
+    // droite. Les métadonnées s'alignent d'une ligne à l'autre au lieu de
+    // s'enrouler différemment selon la longueur de la description.
+    <li
+      className={cn(
+        "grid grid-cols-[3px_1fr] border-b last:border-b-0",
+        meta.length > 0 && "sm:grid-cols-[3px_1fr_12rem]",
+      )}
+    >
+      <StateRule state={itemState(item)} />
+
+      <div className="min-w-0 px-5 py-4">
+        <p
+          className={cn(
+            "text-base font-medium",
+            done && "text-muted-foreground line-through",
+          )}
+        >
+          {item.description}
+        </p>
+
+        {/* Le motif est écrit en clair : une icône seule n'apprendrait rien. */}
+        {item.reviewReason ? (
+          <p className="mt-2 flex flex-wrap items-baseline gap-x-2 text-sm">
+            <span className="eyebrow text-attention">À confirmer</span>
+            <span className="text-muted-foreground">{item.reviewReason}</span>
+          </p>
+        ) : null}
+
+        <div className="mt-3">
+          <SourceExcerpt>{item.sourceExcerpt}</SourceExcerpt>
+        </div>
       </div>
 
-      <p className="mt-2 font-medium">{item.description}</p>
-
-      <dl className="mt-3 flex flex-wrap gap-x-6 gap-y-1 text-sm">
-        <div className="flex gap-1.5">
-          <dt className="text-muted-foreground">Responsable :</dt>
-          <dd className={cn(!item.owner && "text-muted-foreground italic")}>
-            {item.owner ?? "non précisé"}
-          </dd>
-        </div>
-        <div className="flex gap-1.5">
-          <dt className="text-muted-foreground">Échéance :</dt>
-          <dd className={cn(!item.dueDate && "text-muted-foreground italic")}>
-            {item.dueDate ? formatDate(item.dueDate) : "non précisée"}
-          </dd>
-        </div>
-        {item.priority ? (
-          <div className="flex gap-1.5">
-            <dt className="text-muted-foreground">Priorité :</dt>
-            <dd>{label<Priority>(PRIORITY_LABELS, item.priority)}</dd>
-          </div>
-        ) : null}
-        {item.status ? (
-          <div className="flex gap-1.5">
-            <dt className="text-muted-foreground">Statut :</dt>
-            <dd>{label<Status>(STATUS_LABELS, item.status)}</dd>
-          </div>
-        ) : null}
-      </dl>
-
-      {/* Le motif est écrit en clair : une icône seule n'apprendrait rien. */}
-      {item.reviewReason ? (
-        <p className="mt-3 text-sm text-muted-foreground">
-          <span className="font-medium text-foreground">À confirmer — </span>
-          {item.reviewReason}
-        </p>
+      {meta.length > 0 ? (
+        <dl className="col-start-2 space-y-2 px-5 pb-4 sm:col-start-3 sm:border-l sm:py-4">
+          {meta.map((entry) => (
+            <div key={entry.label}>
+              <dt className="eyebrow text-muted-foreground">{entry.label}</dt>
+              <dd
+                className={cn(
+                  "font-mono text-sm",
+                  entry.value === null && "text-muted-foreground italic",
+                  entry.overdue && "text-overdue",
+                )}
+              >
+                {entry.value ?? "non précisé"}
+                {entry.overdue ? " · en retard" : null}
+              </dd>
+            </div>
+          ))}
+        </dl>
       ) : null}
-
-      {/* Traçabilité à la phrase près : d'où sort cet élément. */}
-      <p className="mt-3 border-l-2 pl-3 text-sm text-muted-foreground italic">
-        {item.sourceExcerpt}
-      </p>
     </li>
   );
 }

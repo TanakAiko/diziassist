@@ -4,6 +4,7 @@ import { formatDate } from "@/lib/dates";
 import { buttonVariants } from "@/components/ui/button";
 import { DeleteMeetingButton } from "@/components/delete-meeting-button";
 import { ReviewStateBadge } from "@/components/review-state-badge";
+import { StateRule } from "@/components/state-rule";
 import { cn } from "@/lib/utils";
 
 // La liste reflète l'état de la base : elle est rendue à chaque requête et
@@ -27,16 +28,16 @@ export default async function HomePage() {
     <main className="mx-auto max-w-5xl px-6 py-10">
       <header className="flex items-end justify-between gap-6">
         <div>
-          <h1 className="text-2xl font-semibold tracking-tight">
+          <h1 className="text-3xl font-semibold tracking-tight">
             Comptes rendus
           </h1>
-          <p className="mt-1 max-w-prose text-sm text-muted-foreground">
+          <p className="mt-1 max-w-prose text-base text-muted-foreground">
             Saisissez un compte rendu, validez les éléments extraits, suivez les
             actions.
           </p>
         </div>
         {pending > 0 ? (
-          <p className="shrink-0 font-mono text-xs text-attention">
+          <p className="shrink-0 font-mono text-sm text-attention">
             {pending} en attente de validation
           </p>
         ) : null}
@@ -47,7 +48,7 @@ export default async function HomePage() {
           <p className="font-heading text-lg font-medium">
             Aucun compte rendu pour le moment
           </p>
-          <p className="mx-auto mt-2 max-w-sm text-sm text-muted-foreground">
+          <p className="mx-auto mt-2 max-w-sm text-base text-muted-foreground">
             Collez le texte d&apos;une réunion : diziAssist en propose les
             actions, les points en attente et les informations. Vous validez
             avant tout enregistrement.
@@ -62,24 +63,20 @@ export default async function HomePage() {
         <ul className="mt-8 divide-y overflow-hidden rounded-md border bg-card">
           {meetings.map((meeting) => (
             <li key={meeting.id} className="flex items-stretch">
-              {/* Repère de statut : ambre si le compte rendu attend une
-                  validation, neutre s'il est déjà validé. */}
-              <span
-                aria-hidden
-                className={cn(
-                  "w-[3px] shrink-0",
-                  meeting.reviewedAt === null ? "bg-attention" : "bg-border",
-                )}
+              {/* Même filet que sur les éléments : ambre si le compte rendu
+                  attend une validation, neutre s'il est déjà validé. */}
+              <StateRule
+                state={meeting.reviewedAt === null ? "attention" : "neutral"}
               />
               <div className="flex flex-1 items-center justify-between gap-4 px-4 py-3.5">
                 <div className="min-w-0">
                   <Link
                     href={`/meetings/${meeting.id}`}
-                    className="font-medium hover:text-primary hover:underline"
+                    className="text-base font-medium hover:text-brand-text hover:underline"
                   >
                     {meeting.title}
                   </Link>
-                  <p className="mt-1 font-mono text-xs text-muted-foreground">
+                  <p className="mt-1 font-mono text-sm text-muted-foreground">
                     {formatDate(meeting.meetingDate)}
                     {meeting.reviewedAt
                       ? ` · ${meeting._count.items} élément${meeting._count.items > 1 ? "s" : ""}`

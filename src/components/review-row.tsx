@@ -15,6 +15,9 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { NativeSelect } from "@/components/native-select";
+import { SourceExcerpt } from "@/components/source-excerpt";
+import { StateRule } from "@/components/state-rule";
 import { cn } from "@/lib/utils";
 import type { EditableItem } from "./review-form";
 
@@ -40,14 +43,16 @@ export function ReviewRow({
   return (
     <li
       className={cn(
-        "rounded-lg border p-4",
+        "grid grid-cols-[3px_1fr] border-b last:border-b-0",
         // Une ligne décochée reste lisible : elle n'est pas supprimée, seulement
         // écartée de l'enregistrement.
         !item.selected && "opacity-60",
-        error && "border-destructive",
+        error && "bg-destructive/5",
       )}
     >
-      <div className="flex items-start gap-3">
+      <StateRule state={item.needsReview ? "attention" : "neutral"} />
+
+      <div className="flex items-start gap-3 px-5 py-4">
         <input
           type="checkbox"
           id={fieldId("selected")}
@@ -55,11 +60,11 @@ export function ReviewRow({
           onChange={(event) =>
             onChange(index, { selected: event.target.checked })
           }
-          className="mt-1 size-4 shrink-0 accent-primary"
+          className="mt-0.5 size-5 shrink-0 accent-brand"
         />
         <div className="min-w-0 flex-1">
           <div className="flex flex-wrap items-center gap-2">
-            <Label htmlFor={fieldId("selected")} className="text-sm font-medium">
+            <Label htmlFor={fieldId("selected")} className="text-base font-medium">
               Enregistrer cet élément
             </Label>
             {item.needsReview ? <Badge>À confirmer</Badge> : null}
@@ -68,8 +73,9 @@ export function ReviewRow({
 
           {/* Le motif est écrit en clair : l'utilisateur doit savoir quoi corriger. */}
           {item.reviewReason ? (
-            <p className="mt-1 text-sm text-muted-foreground">
-              {item.reviewReason}
+            <p className="mt-1.5 flex flex-wrap items-baseline gap-x-2 text-sm">
+              <span className="eyebrow text-attention">À confirmer</span>
+              <span className="text-muted-foreground">{item.reviewReason}</span>
             </p>
           ) : null}
 
@@ -96,20 +102,20 @@ export function ReviewRow({
             <div className="grid gap-4 sm:grid-cols-2">
               <div>
                 <Label htmlFor={fieldId("kind")}>Nature</Label>
-                <select
+                <NativeSelect
                   id={fieldId("kind")}
                   value={item.kind}
                   onChange={(event) =>
                     onChange(index, { kind: event.target.value as Kind })
                   }
-                  className="mt-2 h-8 w-full rounded-lg border bg-background px-2 text-sm"
+                  className="mt-2 w-full"
                 >
                   {KINDS.map((kind) => (
                     <option key={kind} value={kind}>
                       {KIND_LABELS[kind]}
                     </option>
                   ))}
-                </select>
+                </NativeSelect>
               </div>
 
               <div>
@@ -142,37 +148,37 @@ export function ReviewRow({
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <Label htmlFor={fieldId("priority")}>Priorité</Label>
-                    <select
+                    <NativeSelect
                       id={fieldId("priority")}
                       value={item.priority}
                       onChange={(event) =>
                         onChange(index, { priority: event.target.value as Priority })
                       }
-                      className="mt-2 h-8 w-full rounded-lg border bg-background px-2 text-sm"
+                      className="mt-2 w-full"
                     >
                       {PRIORITIES.map((priority) => (
                         <option key={priority} value={priority}>
                           {PRIORITY_LABELS[priority]}
                         </option>
                       ))}
-                    </select>
+                    </NativeSelect>
                   </div>
                   <div>
                     <Label htmlFor={fieldId("status")}>Statut</Label>
-                    <select
+                    <NativeSelect
                       id={fieldId("status")}
                       value={item.status}
                       onChange={(event) =>
                         onChange(index, { status: event.target.value as Status })
                       }
-                      className="mt-2 h-8 w-full rounded-lg border bg-background px-2 text-sm"
+                      className="mt-2 w-full"
                     >
                       {STATUSES.map((status) => (
                         <option key={status} value={status}>
                           {STATUS_LABELS[status]}
                         </option>
                       ))}
-                    </select>
+                    </NativeSelect>
                   </div>
                 </div>
               ) : null}
@@ -180,9 +186,9 @@ export function ReviewRow({
           </div>
 
           {/* Traçabilité : la phrase d'origine reste sous les yeux pendant l'édition. */}
-          <p className="mt-4 border-l-2 pl-3 text-sm text-muted-foreground italic">
-            {item.sourceExcerpt}
-          </p>
+          <div className="mt-4">
+            <SourceExcerpt>{item.sourceExcerpt}</SourceExcerpt>
+          </div>
 
           {item.isManual ? (
             <Button

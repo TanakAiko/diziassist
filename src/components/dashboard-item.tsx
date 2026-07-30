@@ -19,10 +19,13 @@ import {
   type ItemActionState,
 } from "@/lib/actions/items";
 import { formatDate, isOverdue, toDateInputValue } from "@/lib/dates";
-import { Badge } from "@/components/ui/badge";
+import { itemState } from "@/lib/items";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { NativeSelect } from "@/components/native-select";
+import { SourceExcerpt } from "@/components/source-excerpt";
+import { StateRule } from "@/components/state-rule";
 import { cn } from "@/lib/utils";
 
 export type DashboardItem = {
@@ -50,6 +53,7 @@ export function DashboardItemRow({ item }: { item: DashboardItem }) {
 
   const isAction = item.kind === "action";
   const overdue = isOverdue(item.dueDate, status);
+  const done = status === "termine";
 
   function changeStatus(next: string) {
     setError(null);
@@ -70,107 +74,134 @@ export function DashboardItemRow({ item }: { item: DashboardItem }) {
   }
 
   return (
-    <li
-      className={cn(
-        "rounded-lg border p-4",
-        status === "termine" && "opacity-70",
-        overdue && "border-destructive/50",
-      )}
-    >
-      <div className="flex flex-wrap items-center gap-2">
-        <Badge variant="outline">
-          {KIND_LABELS[item.kind as Kind] ?? item.kind}
-        </Badge>
-        {item.needsReview ? <Badge>À confirmer</Badge> : null}
-        {overdue ? <Badge variant="destructive">En retard</Badge> : null}
-        <Link
-          href={`/meetings/${item.meeting.id}`}
-          className="ml-auto text-sm text-muted-foreground hover:underline"
+    // Trois zones plutôt qu'une pile : ce qui se lit, ce qui se consulte, ce
+    // qui se manipule. Les commandes sont toujours au même endroit d'une ligne
+    // à l'autre, au lieu de flotter au bout d'un enroulement de texte.
+    <li className="grid grid-cols-[3px_1fr] border-b last:border-b-0 lg:grid-cols-[3px_1fr_11rem_13rem]">
+      <StateRule state={itemState({ ...item, status })} />
+
+      <div className="min-w-0 px-5 py-4">
+        <p className="flex flex-wrap items-baseline gap-x-2">
+          <span className="eyebrow text-muted-foreground">
+            {KIND_LABELS[item.kind as Kind] ?? item.kind}
+          </span>
+          <Link
+            href={`/meetings/${item.meeting.id}`}
+            className="font-mono text-sm text-muted-foreground hover:text-brand-text hover:underline"
+          >
+            {item.meeting.title}
+          </Link>
+        </p>
+
+        <p
+          className={cn(
+            "mt-1 text-base font-medium",
+            done && "text-muted-foreground line-through",
+          )}
         >
-          {item.meeting.title}
-        </Link>
+          {item.description}
+        </p>
+
+        {item.reviewReason ? (
+          <p className="mt-2 flex flex-wrap items-baseline gap-x-2 text-sm">
+            <span className="eyebrow text-attention">À confirmer</span>
+            <span className="text-muted-foreground">{item.reviewReason}</span>
+          </p>
+        ) : null}
+
+        <div className="mt-3">
+          <SourceExcerpt>{item.sourceExcerpt}</SourceExcerpt>
+        </div>
+
+        {error ? (
+          <p className="mt-2 text-sm text-destructive" role="alert">
+            {error}
+          </p>
+        ) : null}
+
+        {editing ? (
+          <DetailsPanel item={item} onDone={() => setEditing(false)} />
+        ) : null}
       </div>
 
-      <p
-        className={cn(
-          "mt-2 font-medium",
-          status === "termine" && "line-through",
-        )}
-      >
-        {item.description}
-      </p>
+      {/* Responsable et échéance : consultés, pas modifiés en ligne. */}
+      <dl className="col-start-2 space-y-2 px-5 pb-4 lg:col-start-3 lg:border-l lg:py-4">
+        <div>
+          <dt className="eyebrow text-muted-foreground">Responsable</dt>
+          <dd
+            className={cn(
+              "font-mono text-sm",
+              !item.owner && "text-muted-foreground italic",
+            )}
+          >
+            {item.owner ?? "non précisé"}
+          </dd>
+        </div>
+        <div>
+          <dt className="eyebrow text-muted-foreground">Échéance</dt>
+          <dd
+            className={cn(
+              "font-mono text-sm",
+              !item.dueDate && "text-muted-foreground italic",
+              overdue && "text-overdue",
+            )}
+          >
+            {item.dueDate ? formatDate(item.dueDate) : "non précisée"}
+            {overdue ? " · en retard" : null}
+          </dd>
+        </div>
+      </dl>
 
-      <div className="mt-3 flex flex-wrap items-center gap-x-6 gap-y-2 text-sm">
-        <span className={cn(!item.owner && "text-muted-foreground italic")}>
-          {item.owner ?? "responsable non précisé"}
-        </span>
-        <span className={cn(!item.dueDate && "text-muted-foreground italic")}>
-          {item.dueDate ? formatDate(item.dueDate) : "échéance non précisée"}
-        </span>
-
+      {/* Statut et priorité : les deux seuls champs modifiables d'un clic, donc
+          les deux seuls à mériter une place fixe à droite de chaque ligne. */}
+      <div className="col-start-2 space-y-2 px-5 pb-4 lg:col-start-4 lg:border-l lg:py-4">
         {isAction ? (
           <>
-            <label className="flex items-center gap-2">
-              <span className="text-muted-foreground">Statut</span>
-              <select
+            <label className="block">
+              <span className="eyebrow text-muted-foreground">Statut</span>
+              <NativeSelect
                 value={status ?? ""}
                 onChange={(event) => changeStatus(event.target.value)}
                 aria-label={`Statut de « ${item.description} »`}
-                className="h-7 rounded-lg border bg-background px-2 text-sm"
+                className="mt-1 w-full"
               >
                 {STATUSES.map((value) => (
                   <option key={value} value={value}>
                     {STATUS_LABELS[value as Status]}
                   </option>
                 ))}
-              </select>
+              </NativeSelect>
             </label>
 
-            <label className="flex items-center gap-2">
-              <span className="text-muted-foreground">Priorité</span>
-              <select
+            <label className="block">
+              <span className="eyebrow text-muted-foreground">Priorité</span>
+              <NativeSelect
                 value={priority ?? ""}
                 onChange={(event) => changePriority(event.target.value)}
                 aria-label={`Priorité de « ${item.description} »`}
-                className="h-7 rounded-lg border bg-background px-2 text-sm"
+                className="mt-1 w-full"
               >
                 {PRIORITIES.map((value) => (
                   <option key={value} value={value}>
                     {PRIORITY_LABELS[value as Priority]}
                   </option>
                 ))}
-              </select>
+              </NativeSelect>
             </label>
           </>
         ) : null}
 
         <Button
           type="button"
-          variant="ghost"
+          variant="outline"
           size="sm"
+          className="w-full"
           onClick={() => setEditing((current) => !current)}
           aria-expanded={editing}
         >
           {editing ? "Fermer" : "Modifier"}
         </Button>
       </div>
-
-      {item.reviewReason ? (
-        <p className="mt-3 text-sm text-muted-foreground">
-          <span className="font-medium text-foreground">À confirmer — </span>
-          {item.reviewReason}
-        </p>
-      ) : null}
-
-      {error ? <p className="mt-2 text-sm text-destructive">{error}</p> : null}
-
-      {editing ? (
-        <DetailsPanel item={item} onDone={() => setEditing(false)} />
-      ) : null}
-
-      <p className="mt-3 border-l-2 pl-3 text-sm text-muted-foreground italic">
-        {item.sourceExcerpt}
-      </p>
     </li>
   );
 }
@@ -195,7 +226,7 @@ function DetailsPanel({
   }, {});
 
   return (
-    <form action={formAction} className="mt-4 rounded-lg border p-4">
+    <form action={formAction} className="mt-4 rounded-md border bg-muted/40 p-4">
       <input type="hidden" name="id" value={item.id} />
       <div className="grid gap-4 sm:grid-cols-2">
         <div>
@@ -221,7 +252,9 @@ function DetailsPanel({
       </div>
 
       {state.error ? (
-        <p className="mt-2 text-sm text-destructive">{state.error}</p>
+        <p className="mt-2 text-sm text-destructive" role="alert">
+          {state.error}
+        </p>
       ) : null}
 
       <div className="mt-4 flex gap-2">

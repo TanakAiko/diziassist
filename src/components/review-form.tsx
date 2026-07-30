@@ -108,7 +108,7 @@ export function ReviewForm({
   return (
     <div>
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <p className="text-sm text-muted-foreground">
+        <p className="text-base text-muted-foreground">
           {selectedCount} élément{selectedCount > 1 ? "s" : ""} sur{" "}
           {items.length} sera{selectedCount > 1 ? "ont" : ""} enregistré
           {selectedCount > 1 ? "s" : ""}.
@@ -119,12 +119,12 @@ export function ReviewForm({
       </div>
 
       {items.length === 0 ? (
-        <p className="mt-6 rounded-lg border border-dashed p-10 text-center text-sm text-muted-foreground">
+        <p className="mt-6 rounded-md border border-dashed bg-card px-6 py-14 text-center text-base text-muted-foreground">
           Aucun élément n&apos;a été extrait de ce compte rendu. Vous pouvez en
           ajouter un à la main.
         </p>
       ) : (
-        <ul className="mt-6 space-y-3">
+        <ul className="mt-6 overflow-hidden rounded-md border bg-card">
           {items.map((item, index) => (
             <ReviewRow
               key={index}
@@ -139,16 +139,16 @@ export function ReviewForm({
       )}
 
       {state.status === "error" ? (
-        <p className="mt-6 rounded-lg border border-destructive p-3 text-sm text-destructive">
+        <p className="mt-6 rounded-md border border-destructive/40 bg-destructive/5 p-4 text-base text-destructive" role="alert">
           {state.message}
         </p>
       ) : null}
 
-      <div className="mt-6 flex items-center gap-3">
+      <div className="sticky bottom-0 mt-6 flex flex-wrap items-center gap-3 border-t bg-background/95 py-4 backdrop-blur">
         <Button type="button" onClick={submit} disabled={isPending}>
           {isPending ? "Enregistrement…" : "Valider et enregistrer"}
         </Button>
-        <p className="text-sm text-muted-foreground">
+        <p className="text-base text-muted-foreground">
           Rien n&apos;est enregistré avant ce clic.
         </p>
       </div>

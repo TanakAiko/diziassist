@@ -27,8 +27,8 @@ export function SiteHeader() {
   return (
     <header className="border-b bg-card">
       <div className="mx-auto flex h-14 max-w-5xl items-center gap-8 px-6">
-        <Link href="/" className="font-heading text-lg font-semibold">
-          dizi<span className="text-primary">Assist</span>
+        <Link href="/" className="font-heading text-xl font-semibold">
+          dizi<span className="text-brand-text">Assist</span>
         </Link>
 
         <nav className="flex h-full items-stretch gap-1">
@@ -44,9 +44,9 @@ export function SiteHeader() {
                 // du bandeau, pas une pastille colorée : plus discret, et il ne
                 // rentre pas en concurrence avec les couleurs de statut.
                 className={cn(
-                  "relative inline-flex items-center px-1 text-sm transition-colors",
+                  "relative inline-flex items-center px-1 text-base transition-colors",
                   active
-                    ? "font-medium text-foreground after:absolute after:inset-x-0 after:-bottom-px after:h-0.5 after:bg-primary"
+                    ? "font-medium text-foreground after:absolute after:inset-x-0 after:-bottom-px after:h-0.5 after:bg-brand"
                     : "text-muted-foreground hover:text-foreground",
                 )}
               >

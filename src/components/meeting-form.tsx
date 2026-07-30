@@ -41,7 +41,7 @@ function SubmitButtons({ aiAvailable }: { aiAvailable: boolean }) {
         </Button>
       </div>
 
-      <p className="text-sm text-muted-foreground">
+      <p className="text-base text-muted-foreground">
         {aiAvailable
           ? "L'analyse par règles est immédiate et fonctionne hors ligne. L'analyse par IA comprend des tournures plus variées, mais demande quelques secondes. En cas d'échec, les règles prennent le relais."
           : "L'analyse par IA est indisponible : aucune clé API n'est configurée sur le serveur. L'analyse par règles reste pleinement fonctionnelle."}

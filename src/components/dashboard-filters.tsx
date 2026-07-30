@@ -13,6 +13,7 @@ import {
 import { ALL } from "@/lib/validation/filters";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { NativeSelect } from "@/components/native-select";
 import { Button } from "@/components/ui/button";
 
 type MeetingOption = { id: string; title: string };
@@ -45,15 +46,15 @@ export function DashboardFilters({
   const value = (key: string) => searchParams.get(key) ?? ALL;
 
   return (
-    <div className="rounded-lg border p-4" data-pending={isPending}>
+    <div className="rounded-md border bg-card p-5" data-pending={isPending}>
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
         <div>
           <Label htmlFor="filter-meeting">Compte rendu</Label>
-          <select
+          <NativeSelect
             id="filter-meeting"
             value={value("meeting")}
             onChange={(event) => setParam("meeting", event.target.value)}
-            className="mt-2 h-8 w-full rounded-lg border bg-background px-2 text-sm"
+            className="mt-2 w-full"
           >
             <option value={ALL}>Tous</option>
             {meetings.map((meeting) => (
@@ -61,16 +62,16 @@ export function DashboardFilters({
                 {meeting.title}
               </option>
             ))}
-          </select>
+          </NativeSelect>
         </div>
 
         <div>
           <Label htmlFor="filter-kind">Nature</Label>
-          <select
+          <NativeSelect
             id="filter-kind"
             value={value("kind")}
             onChange={(event) => setParam("kind", event.target.value)}
-            className="mt-2 h-8 w-full rounded-lg border bg-background px-2 text-sm"
+            className="mt-2 w-full"
           >
             <option value={ALL}>Toutes</option>
             {KINDS.map((kind) => (
@@ -78,16 +79,16 @@ export function DashboardFilters({
                 {KIND_LABELS[kind]}
               </option>
             ))}
-          </select>
+          </NativeSelect>
         </div>
 
         <div>
           <Label htmlFor="filter-status">Statut</Label>
-          <select
+          <NativeSelect
             id="filter-status"
             value={value("status")}
             onChange={(event) => setParam("status", event.target.value)}
-            className="mt-2 h-8 w-full rounded-lg border bg-background px-2 text-sm"
+            className="mt-2 w-full"
           >
             <option value={ALL}>Tous</option>
             {STATUSES.map((status) => (
@@ -95,16 +96,16 @@ export function DashboardFilters({
                 {STATUS_LABELS[status]}
               </option>
             ))}
-          </select>
+          </NativeSelect>
         </div>
 
         <div>
           <Label htmlFor="filter-priority">Priorité</Label>
-          <select
+          <NativeSelect
             id="filter-priority"
             value={value("priority")}
             onChange={(event) => setParam("priority", event.target.value)}
-            className="mt-2 h-8 w-full rounded-lg border bg-background px-2 text-sm"
+            className="mt-2 w-full"
           >
             <option value={ALL}>Toutes</option>
             {PRIORITIES.map((priority) => (
@@ -112,7 +113,7 @@ export function DashboardFilters({
                 {PRIORITY_LABELS[priority]}
               </option>
             ))}
-          </select>
+          </NativeSelect>
         </div>
 
         <div className="lg:col-span-2">
@@ -129,26 +130,26 @@ export function DashboardFilters({
       </div>
 
       <div className="mt-4 flex flex-wrap items-center gap-4">
-        <label className="flex items-center gap-2 text-sm">
+        <label className="flex items-center gap-2 text-base">
           <input
             type="checkbox"
             checked={searchParams.get("retard") === "1"}
             onChange={(event) =>
               setParam("retard", event.target.checked ? "1" : "")
             }
-            className="size-4 accent-primary"
+            className="size-5 accent-brand"
           />
           En retard uniquement
         </label>
 
-        <label className="flex items-center gap-2 text-sm">
+        <label className="flex items-center gap-2 text-base">
           <input
             type="checkbox"
             checked={searchParams.get("aconfirmer") === "1"}
             onChange={(event) =>
               setParam("aconfirmer", event.target.checked ? "1" : "")
             }
-            className="size-4 accent-primary"
+            className="size-5 accent-brand"
           />
           À confirmer uniquement
         </label>

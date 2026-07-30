@@ -68,3 +68,19 @@ export function countItems(
     done: items.filter((item) => item.status === "termine").length,
   };
 }
+
+// L'état qui mérite l'attention de l'utilisateur, un seul par élément. Ce choix
+// est fait ici et non dans chaque composant, pour que le filet de couleur dise
+// la même chose sur le tableau de bord, sur la fiche et sur l'écran de
+// validation. L'ordre des tests est l'ordre de gravité.
+export type ItemState = "overdue" | "attention" | "done" | "neutral";
+
+export function itemState(
+  item: SortableItem,
+  today: Date = todayUtc(),
+): ItemState {
+  if (isOverdue(item.dueDate, item.status, today)) return "overdue";
+  if (item.needsReview) return "attention";
+  if (item.status === "termine") return "done";
+  return "neutral";
+}
