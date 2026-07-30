@@ -64,7 +64,7 @@ Conséquence assumée : l'extracteur par règles ne comprend que des tournures f
 
 ## 5. L'ordre dans lequel j'ai travaillé
 
-D'après l'historique Git — 22 commits, deux journées.
+D'après l'historique Git, sur deux journées.
 
 | Quand | Travail |
 |---|---|
