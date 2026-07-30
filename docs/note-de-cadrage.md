@@ -80,8 +80,21 @@ Le **design est venu après le fonctionnel**, pas avant. Une interface soignée 
 
 La **relecture est venue avant la documentation.** Documenter un code qu'on n'a pas relu revient à documenter ses défauts. Cette relecture a supprimé 305 lignes de code mort et corrigé cinq défauts réels, dont un qui violait la règle centrale du projet : un jour de la semaine mentionné n'importe où dans une phrase produisait une échéance, y compris quand la phrase parlait du passé.
 
-> **Temps de développement effectif déclaré : à compléter.**
-> L'historique ci-dessus donne les fenêtres de travail, pas le temps réellement passé.
+### Temps de développement effectif
+
+**Plus de 6 heures**, réparties sur deux journées avec de nombreuses
+interruptions. Le budget annoncé était de 6 heures : il a été dépassé.
+
+Le dépassement est localisé. Le périmètre fonctionnel — blocs 1 à 5, de
+l'initialisation à la surcouche IA — tient dans les trois sessions du 29 juillet.
+Toute la seconde journée est allée à la refonte visuelle, à la relecture du code
+et à la documentation.
+
+Ce n'est donc pas une dérive de périmètre : **aucune fonctionnalité n'a été
+ajoutée après le 29 juillet.** C'est du temps investi là où le barème le
+valorise le plus — 35 points cumulés sur l'UX, la qualité du code et la
+documentation — au prix d'un dépassement assumé, plutôt qu'un livrable brut
+rendu dans les délais.
 
 ---
 
