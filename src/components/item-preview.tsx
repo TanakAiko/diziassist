@@ -6,6 +6,7 @@ import {
 } from "@/lib/constants";
 import { formatDate, isOverdue } from "@/lib/dates";
 import { itemState } from "@/lib/items";
+import { DeleteItemButton } from "@/components/delete-item-button";
 import { SourceExcerpt } from "@/components/source-excerpt";
 import { StateRule } from "@/components/state-rule";
 import { cn } from "@/lib/utils";
@@ -14,6 +15,7 @@ import { cn } from "@/lib/utils";
 // les deux portent exactement les mêmes champs. Les valeurs venant de la base
 // sont typées `string` par SQLite, d'où les libellés cherchés prudemment.
 export type PreviewItem = {
+  id?: string;
   kind: string;
   description: string;
   owner: string | null;
@@ -90,6 +92,14 @@ export function ItemPreview({ item }: { item: PreviewItem }) {
         <div className="mt-3">
           <SourceExcerpt>{item.sourceExcerpt}</SourceExcerpt>
         </div>
+
+        {/* Présent uniquement sur un élément enregistré : une proposition
+            n'existe pas encore en base, on la décoche au lieu de la supprimer. */}
+        {item.id ? (
+          <div className="mt-2 -ml-2">
+            <DeleteItemButton id={item.id} description={item.description} />
+          </div>
+        ) : null}
       </div>
 
       {meta.length > 0 ? (

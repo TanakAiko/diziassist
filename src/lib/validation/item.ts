@@ -13,10 +13,21 @@ export const updatePrioritySchema = z.object({
   priority: z.enum(PRIORITIES),
 });
 
-// Responsable et échéance : les deux champs que l'extraction laisse le plus
-// souvent à null. Une chaîne vide vaut « non renseigné », donc null.
+export const deleteItemSchema = z.object({ id: itemId });
+
+// Description, responsable et échéance. Les deux derniers sont ceux que
+// l'extraction laisse le plus souvent à null : une chaîne vide vaut
+// « non renseigné », donc null. La description, elle, reste obligatoire —
+// un élément sans intitulé n'est pas rattrapable.
 export const updateDetailsSchema = z.object({
   id: itemId,
+  // Mêmes bornes que dans le schéma de validation initiale : un élément ne
+  // change pas de règle selon l'écran depuis lequel on le modifie.
+  description: z
+    .string()
+    .trim()
+    .min(1, "La description est obligatoire.")
+    .max(500, "La description ne doit pas dépasser 500 caractères."),
   owner: z
     .string()
     .trim()

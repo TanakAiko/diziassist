@@ -79,7 +79,7 @@ export default async function DashboardPage({
 
       {items.length === 0 ? (
         <div className="mt-8 rounded-md border border-dashed bg-card px-6 py-14 text-center">
-          <p className="font-heading text-lg font-medium">
+          <p className="text-lg font-medium tracking-[-0.025em]">
             {filtered ? "Aucun élément ne correspond" : "Rien à suivre encore"}
           </p>
           <p className="mx-auto mt-2 max-w-sm text-base text-muted-foreground">

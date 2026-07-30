@@ -23,6 +23,7 @@ import { itemState } from "@/lib/items";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { DeleteItemButton } from "@/components/delete-item-button";
 import { NativeSelect } from "@/components/native-select";
 import { SourceExcerpt } from "@/components/source-excerpt";
 import { StateRule } from "@/components/state-rule";
@@ -206,9 +207,10 @@ export function DashboardItemRow({ item }: { item: DashboardItem }) {
   );
 }
 
-// Responsable et échéance passent par un panneau d'édition et non par une
-// modification en ligne : ce sont des champs de saisie libre, qui méritent
-// une validation explicite avant écriture.
+// Titre, responsable et échéance passent par un panneau d'édition et non par
+// une modification en ligne : ce sont des champs de saisie libre, qui méritent
+// une validation explicite avant écriture. La suppression est rangée ici pour
+// la même raison — rien de destructif ne doit être à un clic dans la liste.
 function DetailsPanel({
   item,
   onDone,
@@ -226,45 +228,66 @@ function DetailsPanel({
   }, {});
 
   return (
-    <form action={formAction} className="mt-4 rounded-md border bg-muted/40 p-4">
-      <input type="hidden" name="id" value={item.id} />
-      <div className="grid gap-4 sm:grid-cols-2">
+    <div className="mt-4 rounded-md border bg-muted/40 p-4">
+      <form action={formAction}>
+        <input type="hidden" name="id" value={item.id} />
+
         <div>
-          <Label htmlFor={`owner-${item.id}`}>Responsable</Label>
+          <Label htmlFor={`description-${item.id}`}>Titre</Label>
           <Input
-            id={`owner-${item.id}`}
-            name="owner"
-            defaultValue={item.owner ?? ""}
-            placeholder="non précisé"
+            id={`description-${item.id}`}
+            name="description"
+            defaultValue={item.description}
+            aria-invalid={Boolean(state.error)}
             className="mt-2"
           />
         </div>
-        <div>
-          <Label htmlFor={`due-${item.id}`}>Échéance</Label>
-          <Input
-            id={`due-${item.id}`}
-            name="dueDate"
-            type="date"
-            defaultValue={item.dueDate ? toDateInputValue(item.dueDate) : ""}
-            className="mt-2"
-          />
+
+        <div className="mt-4 grid gap-4 sm:grid-cols-2">
+          <div>
+            <Label htmlFor={`owner-${item.id}`}>Responsable</Label>
+            <Input
+              id={`owner-${item.id}`}
+              name="owner"
+              defaultValue={item.owner ?? ""}
+              placeholder="non précisé"
+              className="mt-2"
+            />
+          </div>
+          <div>
+            <Label htmlFor={`due-${item.id}`}>Échéance</Label>
+            <Input
+              id={`due-${item.id}`}
+              name="dueDate"
+              type="date"
+              defaultValue={item.dueDate ? toDateInputValue(item.dueDate) : ""}
+              className="mt-2"
+            />
+          </div>
         </div>
-      </div>
 
-      {state.error ? (
-        <p className="mt-2 text-sm text-destructive" role="alert">
-          {state.error}
-        </p>
-      ) : null}
+        {state.error ? (
+          <p className="mt-2 text-sm text-destructive" role="alert">
+            {state.error}
+          </p>
+        ) : null}
 
-      <div className="mt-4 flex gap-2">
-        <Button type="submit" size="sm" disabled={isPending}>
-          {isPending ? "Enregistrement…" : "Enregistrer"}
-        </Button>
-        <Button type="button" variant="ghost" size="sm" onClick={onDone}>
-          Annuler
-        </Button>
+        <div className="mt-4 flex gap-2">
+          <Button type="submit" size="sm" disabled={isPending}>
+            {isPending ? "Enregistrement…" : "Enregistrer"}
+          </Button>
+          <Button type="button" variant="ghost" size="sm" onClick={onDone}>
+            Annuler
+          </Button>
+        </div>
+      </form>
+
+      {/* La suppression est rangée derrière « Modifier » et sous un filet :
+          elle reste atteignable en deux clics, jamais atteignable par erreur
+          depuis la liste. */}
+      <div className="mt-4 flex justify-end border-t pt-3">
+        <DeleteItemButton id={item.id} description={item.description} />
       </div>
-    </form>
+    </div>
   );
 }

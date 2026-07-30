@@ -27,7 +27,7 @@ export function SiteHeader() {
   return (
     <header className="border-b bg-card">
       <div className="mx-auto flex h-14 max-w-5xl items-center gap-8 px-6">
-        <Link href="/" className="font-heading text-xl font-semibold">
+        <Link href="/" className="text-xl font-semibold tracking-[-0.025em]">
           dizi<span className="text-brand-text">Assist</span>
         </Link>
 

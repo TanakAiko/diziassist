@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/db";
 import {
+  deleteItemSchema,
   updateDetailsSchema,
   updatePrioritySchema,
   updateStatusSchema,
@@ -56,6 +57,7 @@ export async function updateItemDetails(
 ): Promise<ItemActionState> {
   const parsed = updateDetailsSchema.safeParse({
     id: formData.get("id"),
+    description: formData.get("description") ?? "",
     owner: formData.get("owner") ?? "",
     dueDate: formData.get("dueDate") ?? "",
   });
@@ -64,7 +66,7 @@ export async function updateItemDetails(
     return { error: parsed.error.issues[0]?.message ?? "Saisie invalide." };
   }
 
-  const { id, owner, dueDate } = parsed.data;
+  const { id, description, owner, dueDate } = parsed.data;
 
   // Compléter ce qui manquait lève le signalement : c'est précisément ce que
   // l'utilisateur vient de faire.
@@ -82,6 +84,7 @@ export async function updateItemDetails(
   await prisma.item.update({
     where: { id },
     data: {
+      description,
       owner,
       dueDate,
       ...(resolved ? { needsReview: false, reviewReason: null } : {}),
@@ -90,6 +93,23 @@ export async function updateItemDetails(
 
   revalidateItemViews();
   return {};
+}
+
+// Suppression d'un élément déjà enregistré. Elle est définitive : l'élément
+// n'est pas marqué supprimé, il est retiré. C'est cohérent avec le reste du
+// modèle, qui ne stocke aucun état dérivé — et la confirmation en deux temps
+// côté interface est ce qui protège l'utilisateur, pas une colonne en base.
+export async function deleteItem(formData: FormData): Promise<void> {
+  const parsed = deleteItemSchema.safeParse({ id: formData.get("id") });
+  if (!parsed.success) {
+    return;
+  }
+
+  // deleteMany plutôt que delete : supprimer un élément déjà supprimé dans un
+  // autre onglet ne doit pas lever, juste ne rien faire.
+  await prisma.item.deleteMany({ where: { id: parsed.data.id } });
+
+  revalidateItemViews();
 }
 
 // Un élément modifié apparaît aussi sur la fiche de son compte rendu :

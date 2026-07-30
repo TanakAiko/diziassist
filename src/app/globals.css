@@ -16,8 +16,8 @@
      #6b6b6b (5.33:1), sinon les métadonnées seraient illisibles.
 
    Échelle typographique, appliquée partout :
-     titre de page      text-3xl  30px  condensé, semibold
-     titre de section    text-xl  20px  condensé, medium
+     titre de page      text-3xl  30px  semibold, -0.025em
+     titre de section    text-xl  20px  medium,   -0.025em
      corps de texte     text-base 16px
      données (mono)      text-sm  14px  dates, responsables, compteurs
      intitulé capitales  text-xs  12px  .eyebrow
@@ -27,11 +27,11 @@
   --color-background: var(--background);
   --color-foreground: var(--foreground);
 
-  /* Une seule famille, trois rôles. Le mono partage les proportions du sans :
-     les colonnes de dates et de responsables s'alignent sans réglage. */
-  --font-sans: var(--font-plex-sans);
-  --font-mono: var(--font-plex-mono);
-  --font-heading: var(--font-plex-condensed);
+  /* Les deux familles de dizigroup.net. Pas de troisième famille pour les
+     titres : sur leur site, « Quatre piliers, une vision intégrée. » est le même
+     Geist que le corps de texte, distingué par la graisse et l'interlettrage. */
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
 
   --color-ring: var(--ring);
   --color-input: var(--input);
@@ -143,17 +143,18 @@
     @apply font-sans;
   }
 
-  /* Les titres passent en condensé. C'est le seul endroit où la famille change,
-     et cela suffit à marquer la hiérarchie sans forcer sur la taille. */
+  /* L'interlettrage resserré des titres de dizigroup.net, relevé sur leur
+     classe .heading-lg : letter-spacing -0.025em. C'est ce détail, plus que la
+     taille, qui donne aux titres leur allure de charte. */
   h1,
   h2,
   h3 {
-    @apply font-heading;
+    @apply tracking-[-0.025em];
   }
 }
 
 /* Intitulé en capitales : nomme une zone ou qualifie une ligne sans consommer
    une taille de titre. */
 @utility eyebrow {
-  @apply font-heading text-xs font-medium tracking-[0.12em] uppercase;
+  @apply text-xs font-medium tracking-[0.12em] uppercase;
 }

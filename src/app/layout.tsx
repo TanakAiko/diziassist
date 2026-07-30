@@ -1,33 +1,22 @@
 import type { Metadata } from "next";
-import {
-  IBM_Plex_Mono,
-  IBM_Plex_Sans,
-  IBM_Plex_Sans_Condensed,
-} from "next/font/google";
+import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { SiteHeader } from "@/components/site-header";
 
-// Une seule famille, trois rôles : le corps de texte, les titres en condensé,
-// les données en mono. IBM Plex est dessinée pour les outils métier et son mono
-// partage les proportions du sans, ce qui aligne les colonnes de dates.
-const plexSans = IBM_Plex_Sans({
-  variable: "--font-plex-sans",
+// Geist et Geist Mono : les deux familles chargées par dizigroup.net. Le titre
+// « Quatre piliers, une vision intégrée. » de leur page d'accueil est un Geist
+// semibold à -0.025em d'interlettrage — cette valeur est reprise sur les titres
+// dans globals.css. Aligner la police sur la charte plutôt que d'en choisir une
+// autre : c'est la même marque.
+const geistSans = Geist({
+  variable: "--font-geist-sans",
   subsets: ["latin"],
-  weight: ["400", "500", "600"],
   display: "swap",
 });
 
-const plexCondensed = IBM_Plex_Sans_Condensed({
-  variable: "--font-plex-condensed",
+const geistMono = Geist_Mono({
+  variable: "--font-geist-mono",
   subsets: ["latin"],
-  weight: ["500", "600"],
-  display: "swap",
-});
-
-const plexMono = IBM_Plex_Mono({
-  variable: "--font-plex-mono",
-  subsets: ["latin"],
-  weight: ["400", "500"],
   display: "swap",
 });
 
@@ -44,7 +33,7 @@ export default function RootLayout({
   return (
     <html lang="fr">
       <body
-        className={`${plexSans.variable} ${plexCondensed.variable} ${plexMono.variable} antialiased`}
+        className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
         <SiteHeader />
         {children}
