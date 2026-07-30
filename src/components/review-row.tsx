@@ -118,69 +118,78 @@ export function ReviewRow({
                 </NativeSelect>
               </div>
 
-              <div>
-                <Label htmlFor={fieldId("owner")}>Responsable</Label>
-                <Input
-                  id={fieldId("owner")}
-                  value={item.owner}
-                  placeholder="non précisé"
-                  onChange={(event) =>
-                    onChange(index, { owner: event.target.value })
-                  }
-                  className="mt-2"
-                />
-              </div>
-
-              <div>
-                <Label htmlFor={fieldId("dueDate")}>Échéance</Label>
-                <Input
-                  id={fieldId("dueDate")}
-                  type="date"
-                  value={item.dueDate}
-                  onChange={(event) =>
-                    onChange(index, { dueDate: event.target.value })
-                  }
-                  className="mt-2"
-                />
-              </div>
-
+              {/* Responsable, échéance, priorité et statut n'existent que pour
+                  une action : les proposer sur une information laisserait saisir
+                  une valeur qui serait effacée à l'enregistrement. */}
               {isAction ? (
-                <div className="grid grid-cols-2 gap-4">
+                <>
                   <div>
-                    <Label htmlFor={fieldId("priority")}>Priorité</Label>
-                    <NativeSelect
-                      id={fieldId("priority")}
-                      value={item.priority}
+                    <Label htmlFor={fieldId("owner")}>Responsable</Label>
+                    <Input
+                      id={fieldId("owner")}
+                      value={item.owner}
+                      placeholder="non précisé"
                       onChange={(event) =>
-                        onChange(index, { priority: event.target.value as Priority })
+                        onChange(index, { owner: event.target.value })
                       }
-                      className="mt-2 w-full"
-                    >
-                      {PRIORITIES.map((priority) => (
-                        <option key={priority} value={priority}>
-                          {PRIORITY_LABELS[priority]}
-                        </option>
-                      ))}
-                    </NativeSelect>
+                      className="mt-2"
+                    />
                   </div>
+
                   <div>
-                    <Label htmlFor={fieldId("status")}>Statut</Label>
-                    <NativeSelect
-                      id={fieldId("status")}
-                      value={item.status}
+                    <Label htmlFor={fieldId("dueDate")}>Échéance</Label>
+                    <Input
+                      id={fieldId("dueDate")}
+                      type="date"
+                      value={item.dueDate}
                       onChange={(event) =>
-                        onChange(index, { status: event.target.value as Status })
+                        onChange(index, { dueDate: event.target.value })
                       }
-                      className="mt-2 w-full"
-                    >
-                      {STATUSES.map((status) => (
-                        <option key={status} value={status}>
-                          {STATUS_LABELS[status]}
-                        </option>
-                      ))}
-                    </NativeSelect>
+                      className="mt-2"
+                    />
                   </div>
-                </div>
+
+                  <div className="grid grid-cols-2 gap-4 sm:col-span-2">
+                    <div>
+                      <Label htmlFor={fieldId("priority")}>Priorité</Label>
+                      <NativeSelect
+                        id={fieldId("priority")}
+                        value={item.priority}
+                        onChange={(event) =>
+                          onChange(index, {
+                            priority: event.target.value as Priority,
+                          })
+                        }
+                        className="mt-2 w-full"
+                      >
+                        {PRIORITIES.map((priority) => (
+                          <option key={priority} value={priority}>
+                            {PRIORITY_LABELS[priority]}
+                          </option>
+                        ))}
+                      </NativeSelect>
+                    </div>
+                    <div>
+                      <Label htmlFor={fieldId("status")}>Statut</Label>
+                      <NativeSelect
+                        id={fieldId("status")}
+                        value={item.status}
+                        onChange={(event) =>
+                          onChange(index, {
+                            status: event.target.value as Status,
+                          })
+                        }
+                        className="mt-2 w-full"
+                      >
+                        {STATUSES.map((status) => (
+                          <option key={status} value={status}>
+                            {STATUS_LABELS[status]}
+                          </option>
+                        ))}
+                      </NativeSelect>
+                    </div>
+                  </div>
+                </>
               ) : null}
             </div>
           </div>

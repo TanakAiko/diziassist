@@ -12,6 +12,7 @@ import {
   PRIORITIES,
   type Priority,
 } from "@/lib/constants";
+import { joinReasons } from "@/lib/review-reason";
 import { normalize } from "./rules";
 import type { ExtractedItem, ExtractionInput } from "./types";
 
@@ -88,11 +89,6 @@ function parseDueDate(value: string | null, meetingDate: Date): Date | null {
   if (parsed.getTime() < meetingDate.getTime()) return null;
 
   return parsed;
-}
-
-function joinReasons(reasons: (string | null)[]): string | null {
-  const kept = reasons.filter((reason): reason is string => Boolean(reason));
-  return kept.length > 0 ? kept.join(" · ") : null;
 }
 
 // Conversion vers le modèle interne. Les invariants métier sont appliqués ici

@@ -51,14 +51,25 @@ export const reviewSchema = z.object({
 export type ReviewItemInput = z.input<typeof reviewItemSchema>;
 export type ReviewInput = z.input<typeof reviewSchema>;
 
-// Une information n'a ni priorité ni statut, un point en attente non plus :
-// ces champs sont nullables par nature métier. L'invariant est appliqué côté
-// serveur pour qu'il tienne quel que soit ce qu'envoie le client.
+// Une information et un point en attente n'ont ni responsable, ni échéance, ni
+// priorité, ni statut : ces champs sont nullables par nature métier. L'invariant
+// est appliqué côté serveur pour qu'il tienne quel que soit ce qu'envoie le
+// client — le formulaire masque déjà ces champs, mais il ne fait pas foi.
 export function normalizeByKind<
-  T extends { kind: string; priority: unknown; status: unknown },
+  T extends {
+    kind: string;
+    owner: unknown;
+    dueDate: unknown;
+    priority: unknown;
+    status: unknown;
+  },
 >(item: T): T {
   if (item.kind === "action") {
     return item;
   }
-  return { ...item, priority: null, status: null };
+  // Règle métier : une information ou un point en attente n'a ni responsable,
+  // ni échéance, ni priorité, ni statut. Le nettoyage a lieu ici, au moment de
+  // l'écriture, et pas seulement dans le formulaire : la Server Action est un
+  // endpoint public et ne peut pas faire confiance à ce qu'elle reçoit.
+  return { ...item, owner: null, dueDate: null, priority: null, status: null };
 }

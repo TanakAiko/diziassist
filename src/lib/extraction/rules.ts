@@ -1,4 +1,5 @@
 import { DEFAULT_STATUS, type Priority } from "@/lib/constants";
+import { joinReasons } from "@/lib/review-reason";
 import type { ExtractedItem, ExtractionInput } from "./types";
 
 // Extraction déterministe, sans dépendance ni appel réseau.
@@ -48,23 +49,18 @@ const INFO_PATTERNS = [
 const MODAL_TRIGGER = /\b(doit|doivent|devra|devront)\b/i;
 const ASSIGNMENT_TRIGGER =
   /\b(?:est|sont) chargée?s? de\b|\bse charge(?:nt)? de\b|\bprend(?:ent)? en charge\b/i;
-// Futur simple des verbes du premier groupe : « préparera », « enverront ».
+// Futur simple des verbes du premier groupe : « préparera », « prépareront ».
 // [A-Za-zÀ-ÿ] et non \w : en JavaScript, \w ignore les lettres accentuées et
 // couperait « préparera » en plein milieu.
-const FUTURE_TRIGGER = /\b([A-Za-zÀ-ÿ]{3,})(era|eront)\b/i;
-// Faux amis du futur : ce sont des états ou des tournures impersonnelles,
-// pas des actions confiées à quelqu'un.
-const FUTURE_BLACKLIST = new Set([
-  "sera",
-  "seront",
-  "pourra",
-  "pourront",
-  "faudra",
-  "aura",
-  "auront",
-  "verra",
-  "verront",
-]);
+//
+// C'est le {3,} qui écarte les auxiliaires et les tournures impersonnelles :
+// « sera », « pourra », « faudra », « aura », « verra » n'ont pas trois lettres
+// avant « era » et ne déclenchent donc rien. Aucune liste d'exclusion n'est
+// nécessaire — il en existait une, dont aucune entrée ne pouvait matcher.
+//
+// Limite connue et assumée : les futurs irréguliers en « -rront »
+// (« enverront », « verront ») ne sont pas reconnus.
+const FUTURE_TRIGGER = /\b([A-Za-zÀ-ÿ]{3,})(?:era|eront)\b/i;
 
 // Sujets collectifs : une équipe n'est pas un responsable nommé.
 const COLLECTIVE_SUBJECT =
@@ -88,13 +84,27 @@ const WEEKDAYS: Record<string, number> = {
   jeudi: 4, vendredi: 5, samedi: 6,
 };
 
-const WEEKDAY_PATTERN =
-  /\b(lundi|mardi|mercredi|jeudi|vendredi|samedi|dimanche)\b/i;
+// Marqueurs qui introduisent une échéance. La même liste sert à DÉTECTER la
+// date et à NETTOYER la description : une seule source, donc aucune dérive
+// possible entre ce qu'on lit et ce qu'on retire.
+const DUE_MARKERS = "avant|d'ici|au plus tard le|au plus tard|pour";
+const WEEKDAY_NAMES = "lundi|mardi|mercredi|jeudi|vendredi|samedi|dimanche";
+
+// Un jour de la semaine ne vaut échéance que s'il est introduit par un de ces
+// marqueurs. Sans cette contrainte, « relire le compte rendu du lundi
+// précédent » produirait une date — une donnée inventée, à partir d'une phrase
+// qui parle du passé. Règle n°1 du projet.
+const DUE_DATE_PATTERN = new RegExp(
+  `\\b(?:${DUE_MARKERS})\\s+(?:le\\s+)?(${WEEKDAY_NAMES})\\b`,
+  "i",
+);
 
 // Clause temporelle à retirer de la description : elle est déjà portée
 // par le champ dueDate, la répéter alourdirait le libellé.
-const TIME_CLAUSE =
-  /\s*\b(?:avant|d'ici|au plus tard le|au plus tard|pour)\s+(?:le\s+)?(?:lundi|mardi|mercredi|jeudi|vendredi|samedi|dimanche)(?:\s+(?:matin|midi|après-midi|soir))?\b/gi;
+const TIME_CLAUSE = new RegExp(
+  `\\s*\\b(?:${DUE_MARKERS})\\s+(?:le\\s+)?(?:${WEEKDAY_NAMES})(?:\\s+(?:matin|midi|après-midi|soir))?\\b`,
+  "gi",
+);
 
 const HIGH_PRIORITY = /\b(urgent|urgente|bloquant|bloquante|critique|au plus vite|impérativement)\b/i;
 const LOW_PRIORITY = /\b(si possible|à terme|quand ce sera possible|idéalement)\b/i;
@@ -147,7 +157,7 @@ export function nextWeekdayAfter(reference: Date, weekday: number): Date {
 }
 
 function findDueDate(text: string, meetingDate: Date): Date | null {
-  const match = text.match(WEEKDAY_PATTERN);
+  const match = text.match(DUE_DATE_PATTERN);
   if (!match) return null;
 
   const weekday = WEEKDAYS[match[1].toLowerCase()];
@@ -210,7 +220,9 @@ function unwrapCompletive(text: string): string {
 }
 
 function buildActionDescription(text: string, owner: string | null): string {
-  let description = unwrapCompletive(text);
+  // La complétive a déjà été déballée par l'appelant, avant la recherche du
+  // responsable : les deux doivent porter sur exactement le même texte.
+  let description = text;
 
   // Le complément circonstanciel de tête est déjà porté par dueDate.
   description = description.replace(LEADING_ADVERBIAL, "");
@@ -234,11 +246,7 @@ function buildActionDescription(text: string, owner: string | null): string {
   description = withoutModal;
 
   // Futur simple en tête ramené à l'infinitif : « préparera » → « préparer ».
-  description = description.replace(
-    /^([A-Za-zÀ-ÿ]{3,})(?:era|eront)\b/i,
-    (whole, stem: string) =>
-      FUTURE_BLACKLIST.has(whole.toLowerCase()) ? whole : `${stem}er`,
-  );
+  description = description.replace(/^([A-Za-zÀ-ÿ]{3,})(?:era|eront)\b/i, "$1er");
 
   description = description.replace(
     /^(?:est|sont) chargée?s? de\s+|^se charge(?:nt)? de\s+|^prend(?:ent)? en charge\s+/i,
@@ -299,24 +307,14 @@ function splitCoordination(text: string): string[] {
   const rightHasTrigger =
     MODAL_TRIGGER.test(right) ||
     ASSIGNMENT_TRIGGER.test(right) ||
-    hasFutureTrigger(right);
+    FUTURE_TRIGGER.test(right);
 
   return rightHasTrigger ? [left, right] : [text];
-}
-
-function hasFutureTrigger(text: string): boolean {
-  const match = text.match(FUTURE_TRIGGER);
-  return Boolean(match) && !FUTURE_BLACKLIST.has(match![0].toLowerCase());
 }
 
 // --------------------------------------------------------------------------
 // Pipeline
 // --------------------------------------------------------------------------
-
-function joinReasons(reasons: (string | null)[]): string | null {
-  const kept = reasons.filter((reason): reason is string => Boolean(reason));
-  return kept.length > 0 ? kept.join(" · ") : null;
-}
 
 export function extractWithRules({
   rawContent,
@@ -365,7 +363,7 @@ export function extractWithRules({
       (part) =>
         MODAL_TRIGGER.test(part) ||
         ASSIGNMENT_TRIGGER.test(part) ||
-        hasFutureTrigger(part),
+        FUTURE_TRIGGER.test(part),
     );
     if (!hasTrigger) {
       // Ni obligation, ni information : un titre, une transition. On n'invente rien.
@@ -375,7 +373,12 @@ export function extractWithRules({
     let inheritedOwner: string | null = null;
 
     for (const part of parts) {
-      const ownerResult = findOwner(part);
+      // La complétive est déballée avant tout le reste : dans « L'équipe
+      // confirme que Mamadou préparera X », le responsable est Mamadou, pas
+      // l'équipe qui se contente de rapporter. Chercher le sujet sur la phrase
+      // entière donnait un responsable qui n'était pas celui de la description.
+      const clause = unwrapCompletive(part);
+      const ownerResult = findOwner(clause);
       // La seconde obligation d'une phrase coordonnée hérite du responsable
       // de la première : « Mamadou préparera … et devra le faire valider ».
       const owner = ownerResult.owner ?? inheritedOwner;
@@ -384,13 +387,13 @@ export function extractWithRules({
         inheritedOwner = ownerResult.owner;
       }
 
-      const dueDate = findDueDate(part, meetingDate);
-      const description = buildActionDescription(part, ownerResult.owner);
+      const dueDate = findDueDate(clause, meetingDate);
+      const description = buildActionDescription(clause, ownerResult.owner);
 
       // Une validation dont on ne sait pas qui la prononce reste à préciser.
       const validationReason =
-        /faire (?:valider|relire|approuver|signer)/i.test(part) &&
-        !/\bpar\s+[A-ZÀ-Ý]/.test(part)
+        /faire (?:valider|relire|approuver|signer)/i.test(clause) &&
+        !/\bpar\s+[A-ZÀ-Ý]/.test(clause)
           ? "Validateur non identifié"
           : null;
 

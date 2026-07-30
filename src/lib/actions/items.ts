@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/db";
+import { remainingReviewReason } from "@/lib/review-reason";
 import {
   deleteItemSchema,
   updateDetailsSchema,
@@ -72,22 +73,30 @@ export async function updateItemDetails(
   // l'utilisateur vient de faire.
   const item = await prisma.item.findUnique({
     where: { id },
-    select: { needsReview: true, kind: true },
+    select: { kind: true, reviewReason: true },
   });
   if (!item) {
     return { error: "Cet élément n'existe plus." };
   }
 
-  const resolved =
-    item.needsReview && item.kind === "action" && owner !== null && dueDate !== null;
+  // Correctif : le motif n'est pas vidé en bloc. Renseigner le responsable et
+  // l'échéance lève « Responsable non identifié » et « Échéance non précisée »,
+  // mais laisse intact un « Validateur non identifié », que personne n'a traité.
+  const remaining = remainingReviewReason(item.reviewReason, { owner, dueDate });
+
+  // Règle métier : seule une action porte un responsable et une échéance.
+  // La Server Action est un endpoint public, elle ne se repose donc pas sur le
+  // fait que le formulaire masque déjà ces champs hors action.
+  const isAction = item.kind === "action";
 
   await prisma.item.update({
     where: { id },
     data: {
       description,
-      owner,
-      dueDate,
-      ...(resolved ? { needsReview: false, reviewReason: null } : {}),
+      owner: isAction ? owner : null,
+      dueDate: isAction ? dueDate : null,
+      needsReview: remaining !== null,
+      reviewReason: remaining,
     },
   });
 

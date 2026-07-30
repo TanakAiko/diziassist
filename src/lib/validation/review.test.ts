@@ -86,17 +86,36 @@ describe("reviewSchema", () => {
 
 describe("normalizeByKind", () => {
   it("laisse une action intacte", () => {
-    const action = { kind: "action", priority: "haute", status: "en_cours" };
+    const action = {
+      kind: "action",
+      owner: "Awa",
+      dueDate: new Date("2026-07-31T00:00:00.000Z"),
+      priority: "haute",
+      status: "en_cours",
+    };
     expect(normalizeByKind(action)).toEqual(action);
   });
 
-  it("retire priorité et statut d'un point en attente ou d'une information", () => {
-    // Un client modifié pourrait envoyer une priorité sur une information :
+  it("vide les quatre champs réservés aux actions sur un point en attente ou une information", () => {
+    // Un client modifié pourrait envoyer un responsable sur une information :
     // l'invariant métier est appliqué côté serveur, pas seulement dans l'interface.
+    // Sans cela, la valeur était enregistrée puis n'apparaissait nulle part.
     for (const kind of ["pending", "info"]) {
       expect(
-        normalizeByKind({ kind, priority: "haute", status: "termine" }),
-      ).toEqual({ kind, priority: null, status: null });
+        normalizeByKind({
+          kind,
+          owner: "Awa",
+          dueDate: new Date("2026-07-31T00:00:00.000Z"),
+          priority: "haute",
+          status: "termine",
+        }),
+      ).toEqual({
+        kind,
+        owner: null,
+        dueDate: null,
+        priority: null,
+        status: null,
+      });
     }
   });
 });

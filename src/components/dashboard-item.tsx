@@ -125,33 +125,37 @@ export function DashboardItemRow({ item }: { item: DashboardItem }) {
         ) : null}
       </div>
 
-      {/* Responsable et échéance : consultés, pas modifiés en ligne. */}
-      <dl className="col-start-2 space-y-2 px-5 pb-4 lg:col-start-3 lg:border-l lg:py-4">
-        <div>
-          <dt className="eyebrow text-muted-foreground">Responsable</dt>
-          <dd
-            className={cn(
-              "font-mono text-sm",
-              !item.owner && "text-muted-foreground italic",
-            )}
-          >
-            {item.owner ?? "non précisé"}
-          </dd>
-        </div>
-        <div>
-          <dt className="eyebrow text-muted-foreground">Échéance</dt>
-          <dd
-            className={cn(
-              "font-mono text-sm",
-              !item.dueDate && "text-muted-foreground italic",
-              overdue && "text-overdue",
-            )}
-          >
-            {item.dueDate ? formatDate(item.dueDate) : "non précisée"}
-            {overdue ? " · en retard" : null}
-          </dd>
-        </div>
-      </dl>
+      {/* Responsable et échéance : consultés, pas modifiés en ligne. Réservés
+          aux actions — une information n'en porte pas. La cellule suivante a un
+          col-start explicite, l'omettre ne décale donc pas les commandes. */}
+      {isAction ? (
+        <dl className="col-start-2 space-y-2 px-5 pb-4 lg:col-start-3 lg:border-l lg:py-4">
+          <div>
+            <dt className="eyebrow text-muted-foreground">Responsable</dt>
+            <dd
+              className={cn(
+                "font-mono text-sm",
+                !item.owner && "text-muted-foreground italic",
+              )}
+            >
+              {item.owner ?? "non précisé"}
+            </dd>
+          </div>
+          <div>
+            <dt className="eyebrow text-muted-foreground">Échéance</dt>
+            <dd
+              className={cn(
+                "font-mono text-sm",
+                !item.dueDate && "text-muted-foreground italic",
+                overdue && "text-overdue",
+              )}
+            >
+              {item.dueDate ? formatDate(item.dueDate) : "non précisée"}
+              {overdue ? " · en retard" : null}
+            </dd>
+          </div>
+        </dl>
+      ) : null}
 
       {/* Statut et priorité : les deux seuls champs modifiables d'un clic, donc
           les deux seuls à mériter une place fixe à droite de chaque ligne. */}
@@ -243,28 +247,32 @@ function DetailsPanel({
           />
         </div>
 
-        <div className="mt-4 grid gap-4 sm:grid-cols-2">
-          <div>
-            <Label htmlFor={`owner-${item.id}`}>Responsable</Label>
-            <Input
-              id={`owner-${item.id}`}
-              name="owner"
-              defaultValue={item.owner ?? ""}
-              placeholder="non précisé"
-              className="mt-2"
-            />
+        {/* Responsable et échéance ne sont proposés que sur une action : hors
+            action, la Server Action les remet à null de toute façon. */}
+        {item.kind === "action" ? (
+          <div className="mt-4 grid gap-4 sm:grid-cols-2">
+            <div>
+              <Label htmlFor={`owner-${item.id}`}>Responsable</Label>
+              <Input
+                id={`owner-${item.id}`}
+                name="owner"
+                defaultValue={item.owner ?? ""}
+                placeholder="non précisé"
+                className="mt-2"
+              />
+            </div>
+            <div>
+              <Label htmlFor={`due-${item.id}`}>Échéance</Label>
+              <Input
+                id={`due-${item.id}`}
+                name="dueDate"
+                type="date"
+                defaultValue={item.dueDate ? toDateInputValue(item.dueDate) : ""}
+                className="mt-2"
+              />
+            </div>
           </div>
-          <div>
-            <Label htmlFor={`due-${item.id}`}>Échéance</Label>
-            <Input
-              id={`due-${item.id}`}
-              name="dueDate"
-              type="date"
-              defaultValue={item.dueDate ? toDateInputValue(item.dueDate) : ""}
-              className="mt-2"
-            />
-          </div>
-        </div>
+        ) : null}
 
         {state.error ? (
           <p className="mt-2 text-sm text-destructive" role="alert">

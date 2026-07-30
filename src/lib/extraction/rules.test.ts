@@ -69,7 +69,12 @@ describe("compte rendu de référence Quizz+", () => {
       true,
     ]);
 
-    expect(actions[0].reviewReason).toContain("collectif");
+    // « L'équipe confirme que la version Android doit être disponible » : une
+    // fois la complétive déballée, l'obligation porte sur « la version
+    // Android », qui n'est le responsable de rien. Le motif exact est donc
+    // « Responsable non identifié » et non « Responsable collectif » —
+    // l'équipe se contentait de rapporter, elle n'était pas chargée du travail.
+    expect(actions[0].reviewReason).toContain("Responsable non identifié");
     expect(actions[3].reviewReason).toContain("Échéance non précisée");
     expect(actions[4].reviewReason).toContain("Validateur non identifié");
 
@@ -236,5 +241,81 @@ describe("garde-fous", () => {
     expect(
       extractWithRules({ rawContent: "", meetingDate: MEETING_DATE }),
     ).toEqual([]);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Non-régressions issues de la relecture du 30 juillet 2026.
+// ---------------------------------------------------------------------------
+
+describe("échéance : jamais inventée", () => {
+  const meetingDate = new Date("2026-07-27T00:00:00.000Z"); // un lundi
+
+  it("ignore un jour de la semaine qui n'est pas introduit par un marqueur", () => {
+    // « du lundi précédent » parle du passé. En cherchant le jour n'importe où
+    // dans la phrase, l'extracteur en tirait une échéance au lundi suivant —
+    // une donnée inventée, ce que la règle n°1 interdit.
+    const [action] = extractWithRules({
+      rawContent: "Awa doit relire le compte rendu du lundi précédent.",
+      meetingDate,
+    });
+
+    expect(action.kind).toBe("action");
+    expect(action.dueDate).toBeNull();
+    expect(action.reviewReason).toContain("Échéance non précisée");
+  });
+
+  it("retient le jour quand un marqueur l'introduit", () => {
+    for (const phrase of [
+      "Awa doit relire le compte rendu avant jeudi.",
+      "Awa doit relire le compte rendu d'ici jeudi.",
+      "Awa doit relire le compte rendu au plus tard le jeudi.",
+    ]) {
+      const [action] = extractWithRules({ rawContent: phrase, meetingDate });
+      expect(iso(action.dueDate)).toBe("2026-07-30");
+    }
+  });
+});
+
+describe("complétive : le responsable est celui de l'obligation", () => {
+  const meetingDate = new Date("2026-07-27T00:00:00.000Z");
+
+  it("retient le sujet de la complétive, pas celui qui rapporte", () => {
+    // « L'équipe » ne fait que rapporter. Le responsable était cherché sur la
+    // phrase entière : la description nommait Mamadou pendant que owner restait
+    // null avec le motif « Responsable collectif ».
+    const [action] = extractWithRules({
+      rawContent: "L'équipe confirme que Mamadou préparera le support.",
+      meetingDate,
+    });
+
+    expect(action.owner).toBe("Mamadou");
+    expect(action.description).toBe("Préparer le support");
+  });
+});
+
+describe("futur simple : le seuil de trois lettres suffit", () => {
+  const meetingDate = new Date("2026-07-27T00:00:00.000Z");
+
+  it("ne déclenche pas sur un auxiliaire ou une tournure impersonnelle", () => {
+    // « sera », « pourra », « faudra » n'ont pas trois lettres avant « era ».
+    // C'est le {3,} qui les écarte — la liste d'exclusion qui prétendait le
+    // faire ne pouvait matcher aucune de ses propres entrées.
+    for (const phrase of [
+      "Le rapport sera disponible.",
+      "Cela pourra changer.",
+      "Il faudra trancher.",
+    ]) {
+      expect(extractWithRules({ rawContent: phrase, meetingDate })).toHaveLength(0);
+    }
+  });
+
+  it("déclenche sur un futur régulier et le ramène à l'infinitif", () => {
+    const [action] = extractWithRules({
+      rawContent: "Awa préparera le support.",
+      meetingDate,
+    });
+    expect(action.owner).toBe("Awa");
+    expect(action.description).toBe("Préparer le support");
   });
 });
